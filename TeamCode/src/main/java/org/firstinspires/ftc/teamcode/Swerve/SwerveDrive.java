@@ -26,31 +26,27 @@ public class SwerveDrive {
     private double headingOffset = 0.0;
 
     public SwerveDrive(HardwareMap hardwareMap) {
-        // init drive motors
+
         DcMotorEx leftFront = hardwareMap.get(DcMotorEx.class, SwerveConstants.LEFT_FRONT_MOTOR);
         DcMotorEx rightFront = hardwareMap.get(DcMotorEx.class, SwerveConstants.RIGHT_FRONT_MOTOR);
         DcMotorEx leftBack = hardwareMap.get(DcMotorEx.class, SwerveConstants.LEFT_BACK_MOTOR);
         DcMotorEx rightBack = hardwareMap.get(DcMotorEx.class, SwerveConstants.RIGHT_BACK_MOTOR);
 
-        // init steering servos
         CRServo steerFL = hardwareMap.get(CRServo.class, SwerveConstants.STEER_LF);
         CRServo steerFR = hardwareMap.get(CRServo.class, SwerveConstants.STEER_RF);
         CRServo steerBL = hardwareMap.get(CRServo.class, SwerveConstants.STEER_LB);
         CRServo steerBR = hardwareMap.get(CRServo.class, SwerveConstants.STEER_RB);
 
-        // init analog sensors
         AnalogInput sensorFL = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_LF);
         AnalogInput sensorFR = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RF);
         AnalogInput sensorBL = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_LB);
         AnalogInput sensorBR = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RB);
 
-        // create modules
         lf = new SwerveModule(leftFront, steerFL, sensorFL);
         rf = new SwerveModule(rightFront, steerFR, sensorFR);
         lb = new SwerveModule(leftBack, steerBL, sensorBL);
         rb = new SwerveModule(rightBack, steerBR, sensorBR);
 
-        // init kinematics
         kinematics = new SwerveKinematics();
 
         // init imu
@@ -65,7 +61,6 @@ public class SwerveDrive {
         voltageSensor = hardwareMap.voltageSensor.iterator().next();
     }
 
-    /** update all module odometry - must be called every loop */
     public void update() {
         lf.update();
         rf.update();
@@ -74,7 +69,7 @@ public class SwerveDrive {
     }
 
     /**
-     * field-centric drive
+     fcd
      */
     public void driveFieldCentric(double x, double y, double rx) {
         double headingRad = Math.toRadians(getHeading());
@@ -83,7 +78,7 @@ public class SwerveDrive {
     }
 
     /**
-     * robot-centric drive (no imu transform)
+     robo-centric drive no imu
      */
     public void driveRobotCentric(double x, double y, double rx) {
         double inputMagnitude = Math.hypot(x, y) + Math.abs(rx);
@@ -97,9 +92,6 @@ public class SwerveDrive {
         executeModules();
     }
 
-    /**
-     * drive with selectable mode
-     */
     public void drive(double x, double y, double rx, boolean fieldCentric) {
         if (fieldCentric) {
             driveFieldCentric(x, y, rx);
@@ -108,7 +100,6 @@ public class SwerveDrive {
         }
     }
 
-    /** set states for all modules */
     private void setModuleStates(SwerveModuleState[] states) {
         lf.setTargetState(states[0]);
         rf.setTargetState(states[1]);
@@ -116,7 +107,7 @@ public class SwerveDrive {
         rb.setTargetState(states[3]);
     }
 
-    /** execute all modules with voltage compensation */
+    /**exec all modules with voltage comp */
     private void executeModules() {
         double voltageCompensation = SwerveConstants.NOMINAL_VOLTAGE / voltageSensor.getVoltage();
         lf.execute(voltageCompensation);
@@ -140,7 +131,10 @@ public class SwerveDrive {
         rb.stop();
     }
 
-    // --- accessors ---
+
+
+
+
     public SwerveModule getModuleFL() { return lf; }
     public SwerveModule getModuleFR() { return rf; }
     public SwerveModule getModuleBL() { return lb; }
@@ -148,7 +142,6 @@ public class SwerveDrive {
 
     public double getVoltage() { return voltageSensor.getVoltage(); }
 
-    /** reload constants for all modules */
     public void reloadConstants() {
         lf.reloadConstants();
         rf.reloadConstants();

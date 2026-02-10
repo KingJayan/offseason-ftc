@@ -24,7 +24,6 @@ public class sensorVoltageOpMode extends OpMode {
 
     @Override
     public void init_loop() {
-
         swerve.update();
     }
 
@@ -34,7 +33,6 @@ public class sensorVoltageOpMode extends OpMode {
 
         swerve.update();
 
-        // get joystick inputs
         double x = gamepad1.left_stick_x;
         double y = -gamepad1.left_stick_y;
         double rx = gamepad1.right_stick_x;
@@ -52,7 +50,7 @@ public class sensorVoltageOpMode extends OpMode {
             swerve.resetYaw();
         }
 
-        // telemetry
+        //telem
         telemetry.addData("mode", fieldCentric ? "FIELD-CENTRIC" : "ROBOT-CENTRIC");
         telemetry.addData("heading", "%.1f°", swerve.getHeading());
         telemetry.addData("voltage", "%.2fV", swerve.getVoltage());
