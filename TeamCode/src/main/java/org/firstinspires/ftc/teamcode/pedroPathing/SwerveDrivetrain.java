@@ -48,10 +48,14 @@ public class SwerveDrivetrain extends Drivetrain {
         AnalogInput sensorLB = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_LB);
         AnalogInput sensorRB = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RB);
 
-        lf = new SwerveModule(leftFront, steerLF, sensorLF);
-        rf = new SwerveModule(rightFront, steerRF, sensorRF);
-        lb = new SwerveModule(leftBack, steerLB, sensorLB);
-        rb = new SwerveModule(rightBack, steerRB, sensorRB);
+        lf = new SwerveModule(leftFront, steerLF, sensorLF,
+                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED);
+        rf = new SwerveModule(rightFront, steerRF, sensorRF,
+                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED);
+        lb = new SwerveModule(leftBack, steerLB, sensorLB,
+                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED);
+        rb = new SwerveModule(rightBack, steerRB, sensorRB,
+                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED);
 
         kinematics = new SwerveKinematics();
 

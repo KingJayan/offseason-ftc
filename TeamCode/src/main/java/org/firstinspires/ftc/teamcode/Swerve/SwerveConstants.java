@@ -40,10 +40,22 @@ public class SwerveConstants {
     // --- steering pid constants-
     /// TODO: TUNE
     public static double STEER_KP = 0.02;
+    public static double STEER_KD = 0.001;
     public static double STEER_KSTATIC = 0.05;
     public static double STEER_TOLERANCE = 2.0; //in deg
 
     //drive thresh
     public static double INPUT_DEADBAND = 0.05;
     public static double SPEED_DEADBAND = 0.01;
+
+    // --- motor/servo directions (true = reversed) ---
+    public static boolean DRIVE_LF_REVERSED = false;
+    public static boolean DRIVE_RF_REVERSED = false;
+    public static boolean DRIVE_LB_REVERSED = false;
+    public static boolean DRIVE_RB_REVERSED = false;
+
+    public static boolean STEER_LF_REVERSED = false;
+    public static boolean STEER_RF_REVERSED = false;
+    public static boolean STEER_LB_REVERSED = false;
+    public static boolean STEER_RB_REVERSED = false;
 }

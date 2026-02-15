@@ -52,8 +52,8 @@ public class SwerveKinematics {
         for (int i = 0; i < 4; i++) {
             // rotation contribution perp to module position
             // for ccw rot: vx = -ry * omega, vy = rx * omega
-            double rotX = -moduleX[i] * rx;
-            double rotY = moduleY[i] * rx;
+            double rotX = -moduleY[i] * rx;
+            double rotY = moduleX[i] * rx;
 
             wheelX[i] = x + rotX;
             wheelY[i] = y + rotY;
@@ -72,7 +72,11 @@ public class SwerveKinematics {
         }
 
         for (int i = 0; i < 4; i++) {
-            states[i] = new SwerveModuleState(wheelAngle[i], wheelSpeed[i]);
+            double speed = wheelSpeed[i];
+            if (speed < SwerveConstants.SPEED_DEADBAND) {
+                speed = 0.0;
+            }
+            states[i] = new SwerveModuleState(wheelAngle[i], speed);
         }
 
         return states;

@@ -18,17 +18,11 @@ public class SwerveModuleState {
     }
 
     public SwerveModuleState optimize(double currentAngle) {
-        double error = angleWrap(angle - currentAngle);
+        double error = MathUtils.angleWrap(angle - currentAngle);
 
         if (Math.abs(error) > 90.0) {
-            return new SwerveModuleState(angleWrap(angle + 180.0), -speed);
+            return new SwerveModuleState(MathUtils.angleWrap(angle + 180.0), -speed);
         }
         return new SwerveModuleState(angle, speed);
-    }
-
-    private static double angleWrap(double angle) {
-        while (angle > 180.0) angle -= 360.0;
-        while (angle < -180.0) angle += 360.0;
-        return angle;
     }
 }

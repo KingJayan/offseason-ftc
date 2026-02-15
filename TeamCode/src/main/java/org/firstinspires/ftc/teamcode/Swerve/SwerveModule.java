@@ -13,6 +13,7 @@ public class SwerveModule {
     //pid constants (loaded from SwerveConstants)
     /// TODO: TUNE
     private double kP;
+    private double kD;
     private double kStatic;
     private double angleTolerance;
 
@@ -25,21 +26,33 @@ public class SwerveModule {
     private double currentModuleAngle = 0.0;
     private double targetAngle = 0.0;
     private double drivePower = 0.0;
-    private boolean driveReversed = false;
+    private double lastError = 0.0;
 
-    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor) {
+    //direction config
+    private final boolean driveReversed;
+    private final boolean steerReversed;
+
+    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor,
+                        boolean driveReversed, boolean steerReversed) {
         this.drive = drive;
         this.steer = steer;
         this.sensor = sensor;
+        this.driveReversed = driveReversed;
+        this.steerReversed = steerReversed;
 
         // load constants
         this.kP = SwerveConstants.STEER_KP;
+        this.kD = SwerveConstants.STEER_KD;
         this.kStatic = SwerveConstants.STEER_KSTATIC;
         this.angleTolerance = SwerveConstants.STEER_TOLERANCE;
 
         // configure drive motor
         this.drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         this.drive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    }
+
+    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor) {
+        this(drive, steer, sensor, false, false);
     }
 
     /**
@@ -50,6 +63,7 @@ public class SwerveModule {
 
         if (!initialized) {
             lastServoAngle = currentServoAngle;
+            currentModuleAngle = currentServoAngle / SwerveConstants.GEAR_RATIO;
             initialized = true;
             return;
         }
@@ -85,7 +99,6 @@ public class SwerveModule {
         SwerveModuleState optimized = state.optimize(currentModuleAngle);
         this.targetAngle = optimized.angle;
         this.drivePower = optimized.speed;
-        this.driveReversed = (optimized.speed != state.speed);
     }
 
     /**
@@ -100,11 +113,13 @@ public class SwerveModule {
      */
     public void execute(double voltageCompensation) {
 
-        double error = angleWrap(targetAngle - currentModuleAngle);
+        double error = MathUtils.angleWrap(targetAngle - currentModuleAngle);
+        double derivative = error - lastError;
+        lastError = error;
 
         double steerPower = 0.0;
         if (Math.abs(error) > angleTolerance) {
-            steerPower = kP * error;
+            steerPower = kP * error + kD * derivative;
 
             // static compensation
             if (steerPower > 0) {
@@ -117,7 +132,7 @@ public class SwerveModule {
             steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
         }
 
-        steer.setPower(steerPower);
+        steer.setPower(steerReversed ? -steerPower : steerPower);
 
         //drive motor
         double finalDrivePower = drivePower;
@@ -129,12 +144,6 @@ public class SwerveModule {
         finalDrivePower = Math.max(-1.0, Math.min(1.0, finalDrivePower));
 
         drive.setPower(finalDrivePower);
-    }
-
-    private double angleWrap(double angle) {
-        while (angle > 180.0) angle -= 360.0;
-        while (angle < -180.0) angle += 360.0;
-        return angle;
     }
 
 
@@ -153,12 +162,14 @@ public class SwerveModule {
 
     //tune settiers
     public void setKp(double kP) { this.kP = kP; }
+    public void setKd(double kD) { this.kD = kD; }
     public void setKStatic(double kStatic) { this.kStatic = kStatic; }
     public void setAngleTolerance(double tolerance) { this.angleTolerance = tolerance; }
 
     //reload constants from SwerveConstants
     public void reloadConstants() {
         this.kP = SwerveConstants.STEER_KP;
+        this.kD = SwerveConstants.STEER_KD;
         this.kStatic = SwerveConstants.STEER_KSTATIC;
         this.angleTolerance = SwerveConstants.STEER_TOLERANCE;
     }

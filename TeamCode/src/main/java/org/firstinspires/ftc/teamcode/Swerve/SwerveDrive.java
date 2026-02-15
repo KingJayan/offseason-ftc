@@ -23,8 +23,6 @@ public class SwerveDrive {
     private final VoltageSensor voltageSensor;
     private final SwerveKinematics kinematics;
 
-    private double headingOffset = 0.0;
-
     public SwerveDrive(HardwareMap hardwareMap) {
 
         DcMotorEx leftFront = hardwareMap.get(DcMotorEx.class, SwerveConstants.LEFT_FRONT_MOTOR);
@@ -42,10 +40,14 @@ public class SwerveDrive {
         AnalogInput sensorBL = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_LB);
         AnalogInput sensorBR = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RB);
 
-        lf = new SwerveModule(leftFront, steerFL, sensorFL);
-        rf = new SwerveModule(rightFront, steerFR, sensorFR);
-        lb = new SwerveModule(leftBack, steerBL, sensorBL);
-        rb = new SwerveModule(rightBack, steerBR, sensorBR);
+        lf = new SwerveModule(leftFront, steerFL, sensorFL,
+                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED);
+        rf = new SwerveModule(rightFront, steerFR, sensorFR,
+                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED);
+        lb = new SwerveModule(leftBack, steerBL, sensorBL,
+                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED);
+        rb = new SwerveModule(rightBack, steerBR, sensorBR,
+                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED);
 
         kinematics = new SwerveKinematics();
 
@@ -117,11 +119,11 @@ public class SwerveDrive {
     }
 
     public double getHeading() {
-        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES) - headingOffset;
+        return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
     }
 
     public void resetYaw() {
-        headingOffset = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES);
+        imu.resetYaw();
     }
 
     public void stop() {
