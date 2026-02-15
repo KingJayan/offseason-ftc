@@ -49,13 +49,13 @@ public class SwerveDrivetrain extends Drivetrain {
         AnalogInput sensorRB = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RB);
 
         lf = new SwerveModule(leftFront, steerLF, sensorLF,
-                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED);
+                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED, SwerveConstants.OFFSET_LF);
         rf = new SwerveModule(rightFront, steerRF, sensorRF,
-                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED);
+                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED, SwerveConstants.OFFSET_RF);
         lb = new SwerveModule(leftBack, steerLB, sensorLB,
-                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED);
+                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED, SwerveConstants.OFFSET_LB);
         rb = new SwerveModule(rightBack, steerRB, sensorRB,
-                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED);
+                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED, SwerveConstants.OFFSET_RB);
 
         kinematics = new SwerveKinematics();
 
@@ -74,7 +74,9 @@ public class SwerveDrivetrain extends Drivetrain {
     public double[] calculateDrive(Vector correctiveVector, Vector headingVector, Vector centripetalVector, double currentHeading) {
         double x = correctiveVector.getXComponent() + centripetalVector.getXComponent();
         double y = correctiveVector.getYComponent() + centripetalVector.getYComponent();
-        double rx = headingVector.getMagnitude() * Math.signum(headingVector.getTheta());
+
+        //heading vector theta already signed for rotation direction
+        double rx = headingVector.getXComponent();
 
         SwerveModuleState[] states = kinematics.calculate(x, y, rx);
 

@@ -41,13 +41,13 @@ public class SwerveDrive {
         AnalogInput sensorBR = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RB);
 
         lf = new SwerveModule(leftFront, steerFL, sensorFL,
-                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED);
+                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED, SwerveConstants.OFFSET_LF);
         rf = new SwerveModule(rightFront, steerFR, sensorFR,
-                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED);
+                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED, SwerveConstants.OFFSET_RF);
         lb = new SwerveModule(leftBack, steerBL, sensorBL,
-                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED);
+                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED, SwerveConstants.OFFSET_LB);
         rb = new SwerveModule(rightBack, steerBR, sensorBR,
-                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED);
+                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED, SwerveConstants.OFFSET_RB);
 
         kinematics = new SwerveKinematics();
 
@@ -82,8 +82,12 @@ public class SwerveDrive {
      robo-centric drive no imu
      */
     public void driveRobotCentric(double x, double y, double rx) {
-        double inputMagnitude = Math.hypot(x, y) + Math.abs(rx);
-        if (inputMagnitude < SwerveConstants.INPUT_DEADBAND) {
+        //per-axis deadband
+        if (Math.abs(x) < SwerveConstants.INPUT_DEADBAND) x = 0;
+        if (Math.abs(y) < SwerveConstants.INPUT_DEADBAND) y = 0;
+        if (Math.abs(rx) < SwerveConstants.INPUT_DEADBAND) rx = 0;
+
+        if (x == 0 && y == 0 && rx == 0) {
             stop();
             return;
         }

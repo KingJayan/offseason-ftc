@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 public class SwerveModule {
     private final DcMotorEx drive;
@@ -27,18 +28,21 @@ public class SwerveModule {
     private double targetAngle = 0.0;
     private double drivePower = 0.0;
     private double lastError = 0.0;
+    private final ElapsedTime timer = new ElapsedTime();
 
-    //direction config
+    //direction and offset config
     private final boolean driveReversed;
     private final boolean steerReversed;
+    private final double angleOffset;
 
     public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor,
-                        boolean driveReversed, boolean steerReversed) {
+                        boolean driveReversed, boolean steerReversed, double angleOffset) {
         this.drive = drive;
         this.steer = steer;
         this.sensor = sensor;
         this.driveReversed = driveReversed;
         this.steerReversed = steerReversed;
+        this.angleOffset = angleOffset;
 
         // load constants
         this.kP = SwerveConstants.STEER_KP;
@@ -51,8 +55,13 @@ public class SwerveModule {
         this.drive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
+    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor,
+                        boolean driveReversed, boolean steerReversed) {
+        this(drive, steer, sensor, driveReversed, steerReversed, 0.0);
+    }
+
     public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor) {
-        this(drive, steer, sensor, false, false);
+        this(drive, steer, sensor, false, false, 0.0);
     }
 
     /**
@@ -89,7 +98,8 @@ public class SwerveModule {
     private double getServoAngle() {
         double voltage = sensor.getVoltage();
         voltage = Math.min(SwerveConstants.MAX_SENSOR_VOLTAGE, Math.max(0, voltage));
-        return (voltage / SwerveConstants.MAX_SENSOR_VOLTAGE) * 360.0;
+        double raw = (voltage / SwerveConstants.MAX_SENSOR_VOLTAGE) * 360.0;
+        return MathUtils.angleWrap(raw - angleOffset);
     }
 
     /**
@@ -112,9 +122,11 @@ public class SwerveModule {
      * exec control loop
      */
     public void execute(double voltageCompensation) {
+        double dt = timer.seconds();
+        timer.reset();
 
         double error = MathUtils.angleWrap(targetAngle - currentModuleAngle);
-        double derivative = error - lastError;
+        double derivative = (dt > 0) ? (error - lastError) / dt : 0.0;
         lastError = error;
 
         double steerPower = 0.0;
@@ -158,6 +170,7 @@ public class SwerveModule {
     public void stop() {
         drive.setPower(0);
         steer.setPower(0);
+        lastError = 0.0;
     }
 
     //tune settiers

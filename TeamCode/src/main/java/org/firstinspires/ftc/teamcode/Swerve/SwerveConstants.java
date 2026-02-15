@@ -40,6 +40,12 @@ public class SwerveConstants {
     public static boolean STEER_LB_REVERSED = false;
     public static boolean STEER_RB_REVERSED = false;
 
+    //module angle offsets (degrees) for calibration
+    public static double OFFSET_LF = 0.0;
+    public static double OFFSET_RF = 0.0;
+    public static double OFFSET_LB = 0.0;
+    public static double OFFSET_RB = 0.0;
+
     //IMU orientation on robo
     public static RevHubOrientationOnRobot.LogoFacingDirection LOGO_DIRECTION =
             RevHubOrientationOnRobot.LogoFacingDirection.UP;
