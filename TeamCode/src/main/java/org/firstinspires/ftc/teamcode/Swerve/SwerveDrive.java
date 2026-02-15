@@ -52,11 +52,10 @@ public class SwerveDrive {
         kinematics = new SwerveKinematics();
 
         // init imu
-        imu = hardwareMap.get(IMU.class, "imu");
-        /// TODO: FIX orientation for your robot
+        imu = hardwareMap.get(IMU.class, SwerveConstants.IMU_NAME);
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD
+                SwerveConstants.LOGO_DIRECTION,
+                SwerveConstants.USB_DIRECTION
         ));
         imu.initialize(parameters);
 

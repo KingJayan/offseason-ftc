@@ -1,10 +1,13 @@
 package org.firstinspires.ftc.teamcode.Swerve;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+
 /**
- * unified constants for swerve drive configuration.
- * used by both teleop SwerveDrive and Pedro Pathing SwerveDrivetrain.
+ * swerve hardware configuration
  */
 public class SwerveConstants {
+
+    //DS configuration names
 
     public static String LEFT_FRONT_MOTOR = "leftFront";
     public static String RIGHT_FRONT_MOTOR = "rightFront";
@@ -21,34 +24,12 @@ public class SwerveConstants {
     public static String SENSOR_LB = "sensorBL";
     public static String SENSOR_RB = "sensorBR";
 
-    // --- robot dimensions (meters) ---
-    /// TODO: MEASURE
-    public static double TRACK_WIDTH = 0.35;  // L-R distance between wheels
-    public static double WHEEL_BASE = 0.35;   // F-B distance between wheels
+    public static String IMU_NAME = "imu";
 
-    //voltage compensation
-    public static double NOMINAL_VOLTAGE = 13.1;
 
-    // --- gear ratio ---
-    // gear reduction: 3.2 servo rotations = 1 module rotation
-    // sensor before reduction
-    public static double GEAR_RATIO = 3.2;
 
-    // --analog sensor ---
-    public static double MAX_SENSOR_VOLTAGE = 3.3;
+    //motor and servo direction configu, true->reversed
 
-    // --- steering pid constants-
-    /// TODO: TUNE
-    public static double STEER_KP = 0.02;
-    public static double STEER_KD = 0.001;
-    public static double STEER_KSTATIC = 0.05;
-    public static double STEER_TOLERANCE = 2.0; //in deg
-
-    //drive thresh
-    public static double INPUT_DEADBAND = 0.05;
-    public static double SPEED_DEADBAND = 0.01;
-
-    // --- motor/servo directions (true = reversed) ---
     public static boolean DRIVE_LF_REVERSED = false;
     public static boolean DRIVE_RF_REVERSED = false;
     public static boolean DRIVE_LB_REVERSED = false;
@@ -58,4 +39,34 @@ public class SwerveConstants {
     public static boolean STEER_RF_REVERSED = false;
     public static boolean STEER_LB_REVERSED = false;
     public static boolean STEER_RB_REVERSED = false;
+
+    //IMU orientation on robo
+    public static RevHubOrientationOnRobot.LogoFacingDirection LOGO_DIRECTION =
+            RevHubOrientationOnRobot.LogoFacingDirection.UP;
+    public static RevHubOrientationOnRobot.UsbFacingDirection USB_DIRECTION =
+            RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
+
+
+    // dimensions
+
+    public static double TRACK_WIDTH = 0.35;// L-R distance (meters)
+    public static double WHEEL_BASE = 0.35;// F-B distance (meters)
+
+
+    //STEER pid tuning TODO: tune these
+    public static double STEER_KP = 0.02;
+    public static double STEER_KD = 0.001;
+    public static double STEER_KSTATIC = 0.05;//static friction comp
+    public static double STEER_TOLERANCE = 2.0;//degrees
+
+    //voltage compensation
+    public static double NOMINAL_VOLTAGE = 13.1;
+
+    //all deadbands
+    public static double INPUT_DEADBAND = 0.05; // joystick
+    public static double SPEED_DEADBAND = 0.01; // module speed
+
+    //module hardware/misc
+    public static double GEAR_RATIO = 3.2;//servo:module ratio
+    public static double MAX_SENSOR_VOLTAGE = 3.3; // analog encoder max
 }
