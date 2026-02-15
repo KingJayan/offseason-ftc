@@ -171,13 +171,4 @@ public class SwerveDrivetrain extends Drivetrain {
         lb.stop();
         rb.stop();
     }
-
-
-
-
-
-    public SwerveModule getModuleLF() { return lf; }
-    public SwerveModule getModuleRF() { return rf; }
-    public SwerveModule getModuleLB() { return lb; }
-    public SwerveModule getModuleRB() { return rb; }
 }

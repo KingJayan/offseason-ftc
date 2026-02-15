@@ -55,14 +55,6 @@ public class SwerveModule {
         this.drive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
-    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor,
-                        boolean driveReversed, boolean steerReversed) {
-        this(drive, steer, sensor, driveReversed, steerReversed, 0.0);
-    }
-
-    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor) {
-        this(drive, steer, sensor, false, false, 0.0);
-    }
 
     /**
      * track cumulative servo rotations to get abs angle
@@ -173,13 +165,6 @@ public class SwerveModule {
         lastError = 0.0;
     }
 
-    //tune settiers
-    public void setKp(double kP) { this.kP = kP; }
-    public void setKd(double kD) { this.kD = kD; }
-    public void setKStatic(double kStatic) { this.kStatic = kStatic; }
-    public void setAngleTolerance(double tolerance) { this.angleTolerance = tolerance; }
-
-    //reload constants from SwerveConstants
     public void reloadConstants() {
         this.kP = SwerveConstants.STEER_KP;
         this.kD = SwerveConstants.STEER_KD;
