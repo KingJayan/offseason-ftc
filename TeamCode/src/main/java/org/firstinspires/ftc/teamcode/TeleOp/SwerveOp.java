@@ -1,0 +1,110 @@
+package org.firstinspires.ftc.teamcode.TeleOp;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+import org.firstinspires.ftc.teamcode.config.Config;
+import org.firstinspires.ftc.teamcode.Swerve.Drivetrain;
+import org.firstinspires.ftc.teamcode.helpers.util.RateLimiter;
+import org.firstinspires.ftc.teamcode.helpers.util.MathUtil;
+import org.firstinspires.ftc.teamcode.helpers.Toggle;
+
+@TeleOp(name="swerve")
+public class SwerveOp extends OpMode {
+    private Drivetrain dt;
+    private boolean fcd = true;
+    private final Toggle t = new Toggle();
+    private final RateLimiter rX = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
+    private final RateLimiter rY = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
+    private final RateLimiter rR = new RateLimiter(Config.R_ACCEL, Config.R_DECEL);
+
+    //heading lock
+    private double tgtH = 0;
+    private boolean hLock = false;
+    private double lastHErr = 0;
+    private final ElapsedTime hTimer = new ElapsedTime();
+
+    @Override
+    public void init() {
+        dt = new Drivetrain(hardwareMap);
+        dt.resetYaw();
+        tgtH = dt.getHeading();
+    }
+
+    @Override
+    public void init_loop() { dt.update(); }
+
+    @Override
+    public void loop() {
+        dt.update();
+        rX.setRates(Config.D_ACCEL, Config.D_DECEL);
+        rY.setRates(Config.D_ACCEL, Config.D_DECEL);
+        rR.setRates(Config.R_ACCEL, Config.R_DECEL);
+
+        double lx = gamepad1.left_stick_x;
+        double ly = -gamepad1.left_stick_y;
+        double rx = gamepad1.right_stick_x;
+
+        //mag-based scaling/corrected smoothstep
+        double x, y;
+        if (Config.USE_MAG_SCALING) {
+            double mag = Math.hypot(lx, ly);
+            if (mag > 1.0) { lx /= mag; ly /= mag; mag = 1.0; }
+            double newMag = Config.apply(mag, Config.T_MODE);
+            double scale = mag > 0 ? newMag / mag : 0;
+            x = lx * scale;
+            y = ly * scale;
+        } else {
+            x = Config.apply(lx, Config.T_MODE);
+            y = Config.apply(ly, Config.T_MODE);
+        }
+
+        //precision mode
+        if (gamepad1.left_bumper || gamepad1.right_bumper) {
+            x *= Config.PRECISION_SCALE;
+            y *= Config.PRECISION_SCALE;
+            rx *= Config.PRECISION_SCALE;
+        }
+
+        //heading lock logic (dpad)
+        if (gamepad1.dpad_up) { tgtH = 0; hLock = true; }
+        else if (gamepad1.dpad_left) { tgtH = 90; hLock = true; }
+        else if (gamepad1.dpad_down) { tgtH = 180; hLock = true; }
+        else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; }
+
+        //reset lock if manual rotation used
+        if (Math.abs(rx) > 0.05) hLock = false;
+        
+        if (hLock) {
+            double dtH = hTimer.seconds();
+            hTimer.reset();
+            double curH = dt.getHeading();
+            double err = MathUtil.wrap(tgtH - curH);
+            double d = dtH > 0 ? (err - lastHErr) / dtH : 0;
+            lastHErr = err;
+            rx = (err * Config.H_KP) + (d * Config.H_KD);
+        }
+
+        //reset 0deg rot (button x)
+        if (gamepad1.x) dt.resetYaw();
+
+        //apply slew rate
+        if (Config.SLEW) {
+            x = rX.calculate(x);
+            y = rY.calculate(y);
+            rx = rR.calculate(rx);
+        }
+
+        if (t.update(gamepad1.ps)) fcd = !fcd;
+        dt.drive(x, y, rx, fcd);
+
+        telemetry.addData("mode", fcd ? "fcd" : "robot");
+        telemetry.addData("h", "%.1f", dt.getHeading());
+        telemetry.addData("lock", hLock ? "active (" + tgtH + ")" : "off");
+        telemetry.update();
+    }
+
+    @Override
+    public void stop() { dt.stop(); }
+}

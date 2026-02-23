@@ -8,167 +8,76 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-import org.firstinspires.ftc.teamcode.Swerve.SwerveConstants;
-import org.firstinspires.ftc.teamcode.Swerve.SwerveKinematics;
+import org.firstinspires.ftc.teamcode.config.Constants;
+import org.firstinspires.ftc.teamcode.Swerve.Kinematics;
 import org.firstinspires.ftc.teamcode.Swerve.SwerveModule;
-import org.firstinspires.ftc.teamcode.Swerve.SwerveModuleState;
+import org.firstinspires.ftc.teamcode.Swerve.ModuleState;
 
-/**
- * custom swerve drivetrain for pedro pathing.
- * handles 4 independent swerve modules with cr servo steering and analog encoders.
- */
+/**swerve drivetrain for pedro pathing*/
 public class SwerveDrivetrain extends Drivetrain {
-    private final SwerveModule lf;
-    private final SwerveModule rf;
-    private final SwerveModule lb;
-    private final SwerveModule rb;
-    private final VoltageSensor voltageSensor;
-    private final SwerveKinematics kinematics;
+    private final SwerveModule lf, rf, lb, rb;
+    private final VoltageSensor vSens;
+    private final Kinematics kin;
+    private final double[] o = new double[8];
+    private double xV = 0, yV = 0;
 
-    private final double[] driveOutputs = new double[8];
+    public SwerveDrivetrain(HardwareMap hw) {
+        lf = new SwerveModule(hw.get(DcMotorEx.class, Constants.LF_DRIVE), hw.get(CRServo.class, Constants.LF_STEER), hw.get(AnalogInput.class, Constants.LF_ENC), Constants.LF_DRIVE_REV, Constants.LF_STEER_REV, Constants.LF_OFF);
+        rf = new SwerveModule(hw.get(DcMotorEx.class, Constants.RF_DRIVE), hw.get(CRServo.class, Constants.RF_STEER), hw.get(AnalogInput.class, Constants.RF_ENC), Constants.RF_DRIVE_REV, Constants.RF_STEER_REV, Constants.RF_OFF);
+        lb = new SwerveModule(hw.get(DcMotorEx.class, Constants.LB_DRIVE), hw.get(CRServo.class, Constants.LB_STEER), hw.get(AnalogInput.class, Constants.LB_ENC), Constants.LB_DRIVE_REV, Constants.LB_STEER_REV, Constants.LB_OFF);
+        rb = new SwerveModule(hw.get(DcMotorEx.class, Constants.RB_DRIVE), hw.get(CRServo.class, Constants.RB_STEER), hw.get(AnalogInput.class, Constants.RB_ENC), Constants.RB_DRIVE_REV, Constants.RB_STEER_REV, Constants.RB_OFF);
 
-    // velocity tracking
-    private double xVelocity = 0;
-    private double yVelocity = 0;
-
-    public SwerveDrivetrain(HardwareMap hardwareMap) {
-
-        DcMotorEx leftFront = hardwareMap.get(DcMotorEx.class, SwerveConstants.LEFT_FRONT_MOTOR);
-        DcMotorEx rightFront = hardwareMap.get(DcMotorEx.class, SwerveConstants.RIGHT_FRONT_MOTOR);
-        DcMotorEx leftBack = hardwareMap.get(DcMotorEx.class, SwerveConstants.LEFT_BACK_MOTOR);
-        DcMotorEx rightBack = hardwareMap.get(DcMotorEx.class, SwerveConstants.RIGHT_BACK_MOTOR);
-
-        CRServo steerLF = hardwareMap.get(CRServo.class, SwerveConstants.STEER_LF);
-        CRServo steerRF = hardwareMap.get(CRServo.class, SwerveConstants.STEER_RF);
-        CRServo steerLB = hardwareMap.get(CRServo.class, SwerveConstants.STEER_LB);
-        CRServo steerRB = hardwareMap.get(CRServo.class, SwerveConstants.STEER_RB);
-
-        AnalogInput sensorLF = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_LF);
-        AnalogInput sensorRF = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RF);
-        AnalogInput sensorLB = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_LB);
-        AnalogInput sensorRB = hardwareMap.get(AnalogInput.class, SwerveConstants.SENSOR_RB);
-
-        lf = new SwerveModule(leftFront, steerLF, sensorLF,
-                SwerveConstants.DRIVE_LF_REVERSED, SwerveConstants.STEER_LF_REVERSED, SwerveConstants.OFFSET_LF);
-        rf = new SwerveModule(rightFront, steerRF, sensorRF,
-                SwerveConstants.DRIVE_RF_REVERSED, SwerveConstants.STEER_RF_REVERSED, SwerveConstants.OFFSET_RF);
-        lb = new SwerveModule(leftBack, steerLB, sensorLB,
-                SwerveConstants.DRIVE_LB_REVERSED, SwerveConstants.STEER_LB_REVERSED, SwerveConstants.OFFSET_LB);
-        rb = new SwerveModule(rightBack, steerRB, sensorRB,
-                SwerveConstants.DRIVE_RB_REVERSED, SwerveConstants.STEER_RB_REVERSED, SwerveConstants.OFFSET_RB);
-
-        kinematics = new SwerveKinematics();
-
-        voltageSensor = hardwareMap.voltageSensor.iterator().next();
-        setNominalVoltage(SwerveConstants.NOMINAL_VOLTAGE);
+        kin = new Kinematics();
+        vSens = hw.voltageSensor.iterator().next();
+        setNominalVoltage(Constants.NOMINAL_VOLTAGE);
     }
 
     public void update() {
-        lf.update();
-        rf.update();
-        lb.update();
-        rb.update();
+        lf.update(); rf.update(); lb.update(); rb.update();
     }
 
     @Override
-    public double[] calculateDrive(Vector correctiveVector, Vector headingVector, Vector centripetalVector, double currentHeading) {
-        double x = correctiveVector.getXComponent() + centripetalVector.getXComponent();
-        double y = correctiveVector.getYComponent() + centripetalVector.getYComponent();
+    public double[] calculateDrive(Vector corr, Vector head, Vector cent, double h) {
+        //pedro x is fwd, y is lft. kin x is rgt, y is fwd.
+        double f = corr.getXComponent() + cent.getXComponent();
+        double l = corr.getYComponent() + cent.getYComponent();
+        double rx = head.getXComponent();
 
-        //heading vector theta already signed for rotation direction
-        double rx = headingVector.getXComponent();
-
-        SwerveModuleState[] states = kinematics.calculate(x, y, rx);
-
-        //pack: [lfAngle, lfSpeed, rfAngle, rfSpeed, lbAngle, lbSpeed, rbAngle, rbSpeed]
-        driveOutputs[0] = states[0].angle; driveOutputs[1] = states[0].speed;
-        driveOutputs[2] = states[1].angle; driveOutputs[3] = states[1].speed;
-        driveOutputs[4] = states[2].angle; driveOutputs[5] = states[2].speed;
-        driveOutputs[6] = states[3].angle; driveOutputs[7] = states[3].speed;
-
-        return driveOutputs;
+        ModuleState[] s = kin.calculate(-l, f, rx);
+        o[0] = s[0].angle; o[1] = s[0].speed;
+        o[2] = s[1].angle; o[3] = s[1].speed;
+        o[4] = s[2].angle; o[5] = s[2].speed;
+        o[6] = s[3].angle; o[7] = s[3].speed;
+        return o;
     }
 
     @Override
     public void runDrive(double[] outputs) {
         update();
-
-        double totalSpeed = Math.abs(outputs[1]) + Math.abs(outputs[3]) + Math.abs(outputs[5]) + Math.abs(outputs[7]);
-        if (totalSpeed < SwerveConstants.SPEED_DEADBAND) {
-            stop();
-            return;
+        if (Math.abs(outputs[1]) + Math.abs(outputs[3]) + Math.abs(outputs[5]) + Math.abs(outputs[7]) < Constants.MODULE_DB) {
+            stop(); return;
         }
+        lf.set(new ModuleState(outputs[0], outputs[1]));
+        rf.set(new ModuleState(outputs[2], outputs[3]));
+        lb.set(new ModuleState(outputs[4], outputs[5]));
+        rb.set(new ModuleState(outputs[6], outputs[7]));
 
-        //set module states
-        lf.setTargetState(outputs[0], outputs[1]);
-        rf.setTargetState(outputs[2], outputs[3]);
-        lb.setTargetState(outputs[4], outputs[5]);
-        rb.setTargetState(outputs[6], outputs[7]);
-
-        //exec w/ voltage compensation
-        double voltageComp = isVoltageCompensation() ? getNominalVoltage() / getVoltage() : 1.0;
-        lf.execute(voltageComp);
-        rf.execute(voltageComp);
-        lb.execute(voltageComp);
-        rb.execute(voltageComp);
+        double v = isVoltageCompensation() ? getNominalVoltage() / getVoltage() : 1.0;
+        lf.execute(v); rf.execute(v); lb.execute(v); rb.execute(v);
     }
 
-    @Override
-    public void updateConstants() {
-        lf.reloadConstants();
-        rf.reloadConstants();
-        lb.reloadConstants();
-        rb.reloadConstants();
-    }
-
-    @Override
-    public void breakFollowing() {
-        stop();
-    }
-
-    @Override
-    public void startTeleopDrive() {
-    }
-
-    @Override
-    public void startTeleopDrive(boolean fieldCentric) {
-    }
-
-    @Override
-    public double xVelocity() {
-        return xVelocity;
-    }
-
-    @Override
-    public double yVelocity() {
-        return yVelocity;
-    }
-
-    @Override
-    public void setXVelocity(double v) {
-        xVelocity = v;
-    }
-
-    @Override
-    public void setYVelocity(double v) {
-        yVelocity = v;
-    }
-
-    @Override
-    public double getVoltage() {
-        return voltageSensor.getVoltage();
-    }
-
-    @Override
-    public String debugString() {
-        return String.format("lf:%.1f rf:%.1f lb:%.1f rb:%.1f",
-                lf.getCurrAngle(), rf.getCurrAngle(), lb.getCurrAngle(), rb.getCurrAngle());
-    }
+    @Override public void updateConstants() {}
+    @Override public void breakFollowing() { stop(); }
+    @Override public void startTeleopDrive() {}
+    @Override public void startTeleopDrive(boolean fcd) {}
+    @Override public double xVelocity() { return xV; }
+    @Override public double yVelocity() { return yV; }
+    @Override public void setXVelocity(double v) { xV = v; }
+    @Override public void setYVelocity(double v) { yV = v; }
+    @Override public double getVoltage() { return vSens.getVoltage(); }
+    @Override public String debugString() { return String.format("lf:%.1f rf:%.1f lb:%.1f rb:%.1f", lf.getCurA(), rf.getCurA(), lb.getCurA(), rb.getCurA()); }
 
     public void stop() {
-        lf.stop();
-        rf.stop();
-        lb.stop();
-        rb.stop();
+        lf.stop(); rf.stop(); lb.stop(); rb.stop();
     }
 }
