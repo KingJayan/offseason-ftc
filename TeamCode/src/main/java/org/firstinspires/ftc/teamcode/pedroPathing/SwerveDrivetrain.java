@@ -162,7 +162,7 @@ public class SwerveDrivetrain extends Drivetrain {
     @Override
     public String debugString() {
         return String.format("lf:%.1f rf:%.1f lb:%.1f rb:%.1f",
-                lf.getCurrentAngle(), rf.getCurrentAngle(), lb.getCurrentAngle(), rb.getCurrentAngle());
+                lf.getCurrAngle(), rf.getCurrAngle(), lb.getCurrAngle(), rb.getCurrAngle());
     }
 
     public void stop() {

@@ -19,29 +19,29 @@ public class SwerveModule {
     private double angleTolerance;
 
     //odom tracking for rollover
-    private double lastServoAngle = 0.0;
-    private double totalServoRotations = 0.0;
-    private boolean initialized = false;
+    private double lastServoAngle = 0;
+    private double totalRots = 0;
+    private boolean init = false;
 
     // curr state
-    private double currentModuleAngle = 0.0;
-    private double targetAngle = 0.0;
-    private double drivePower = 0.0;
-    private double lastError = 0.0;
+    private double currModuleAngle = 0;
+    private double targetAngle = 0;
+    private double drivePower = 0;
+    private double lastError = 0;
     private final ElapsedTime timer = new ElapsedTime();
 
     //direction and offset config
-    private final boolean driveReversed;
-    private final boolean steerReversed;
+    private final boolean dReversed;
+    private final boolean sReversed;
     private final double angleOffset;
 
     public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput sensor,
-                        boolean driveReversed, boolean steerReversed, double angleOffset) {
+                        boolean dReversed, boolean sReversed, double angleOffset) {
         this.drive = drive;
         this.steer = steer;
         this.sensor = sensor;
-        this.driveReversed = driveReversed;
-        this.steerReversed = steerReversed;
+        this.dReversed = dReversed;
+        this.sReversed = sReversed;
         this.angleOffset = angleOffset;
 
         // load constants
@@ -60,29 +60,29 @@ public class SwerveModule {
      * track cumulative servo rotations to get abs angle
      */
     public void update() {
-        double currentServoAngle = getServoAngle();
+        double currServoAngle = getServoAngle();
 
-        if (!initialized) {
-            lastServoAngle = currentServoAngle;
-            currentModuleAngle = currentServoAngle / SwerveConstants.GEAR_RATIO;
-            initialized = true;
+        if (!init) {
+            lastServoAngle = currServoAngle;
+            currModuleAngle = currServoAngle /SwerveConstants.GEAR_RATIO;
+            init = true;
             return;
         }
 
-        double delta = currentServoAngle - lastServoAngle;
+        double delta = currServoAngle-lastServoAngle;
 
-        if (delta > 180.0) {
-            totalServoRotations -= 1.0; //low-high
-        } else if (delta < -180.0) {
+        if (delta >180.0) {
+            totalRots -= 1.0; //low-high
+        } else if (delta< -180.0) {
 
-            totalServoRotations += 1.0;//high-low
+            totalRots += 1.0;//high-low
         }
 
-        lastServoAngle = currentServoAngle;
+        lastServoAngle=currServoAngle;
 
         //calc module angle: total servo travel/ gear ratio
-        double totalServoDegrees = (totalServoRotations * 360.0) + currentServoAngle;
-        currentModuleAngle = totalServoDegrees / SwerveConstants.GEAR_RATIO;
+        double sumServoDeg = (totalRots * 360.0) +currServoAngle;
+        currModuleAngle = sumServoDeg / SwerveConstants.GEAR_RATIO;
     }
 
     /** read raw server angle
@@ -90,15 +90,15 @@ public class SwerveModule {
     private double getServoAngle() {
         double voltage = sensor.getVoltage();
         voltage = Math.min(SwerveConstants.MAX_SENSOR_VOLTAGE, Math.max(0, voltage));
-        double raw = (voltage / SwerveConstants.MAX_SENSOR_VOLTAGE) * 360.0;
-        return MathUtils.angleWrap(raw - angleOffset);
+        double raw = (voltage / SwerveConstants.MAX_SENSOR_VOLTAGE) *360;
+        return MathUtils.angleWrap(raw-angleOffset);
     }
 
     /**
      * set target state for module using SwerveModuleState
      */
     public void setTargetState(SwerveModuleState state) {
-        SwerveModuleState optimized = state.optimize(currentModuleAngle);
+        SwerveModuleState optimized = state.optimize(currModuleAngle);
         this.targetAngle = optimized.angle;
         this.drivePower = optimized.speed;
     }
@@ -117,18 +117,18 @@ public class SwerveModule {
         double dt = timer.seconds();
         timer.reset();
 
-        double error = MathUtils.angleWrap(targetAngle - currentModuleAngle);
-        double derivative = (dt > 0) ? (error - lastError) / dt : 0.0;
+        double error = MathUtils.angleWrap(targetAngle - currModuleAngle);
+        double d= (dt > 0) ? (error - lastError) /dt : 0.0;
         lastError = error;
 
         double steerPower = 0.0;
         if (Math.abs(error) > angleTolerance) {
-            steerPower = kP * error + kD * derivative;
+            steerPower = kP*error + kD*d;
 
             // static compensation
             if (steerPower > 0) {
                 steerPower += kStatic;
-            } else if (steerPower < 0) {
+            } else if (steerPower<0) {
                 steerPower -= kStatic;
             }
 
@@ -136,23 +136,23 @@ public class SwerveModule {
             steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
         }
 
-        steer.setPower(steerReversed ? -steerPower : steerPower);
+        steer.setPower(sReversed ? -steerPower : steerPower);
 
         //drive motor
-        double finalDrivePower = drivePower;
-        if (driveReversed) {
-            finalDrivePower = -finalDrivePower;
+        double plegit = drivePower;
+        if (dReversed) {
+            plegit = -plegit;
         }
 
-        finalDrivePower *= voltageCompensation;
-        finalDrivePower = Math.max(-1.0, Math.min(1.0, finalDrivePower));
+        plegit *= voltageCompensation;
+        plegit = Math.max(-1.0, Math.min(1.0, plegit));
 
-        drive.setPower(finalDrivePower);
+        drive.setPower(plegit);
     }
 
 
-    public double getCurrentAngle() {
-        return currentModuleAngle;
+    public double getCurrAngle() {
+        return currModuleAngle;
     }
 
     public double getTargetAngle() {

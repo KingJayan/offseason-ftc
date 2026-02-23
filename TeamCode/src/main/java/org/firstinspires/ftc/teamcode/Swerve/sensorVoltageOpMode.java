@@ -3,7 +3,6 @@ package org.firstinspires.ftc.teamcode.Swerve;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import org.firstinspires.ftc.teamcode.Swerve.SwerveDrive;
 import org.firstinspires.ftc.teamcode.helpers.Toggle;
 
 @TeleOp(name = "Sensor Voltage Checker")
@@ -56,16 +55,16 @@ public class sensorVoltageOpMode extends OpMode {
         telemetry.addData("voltage", "%.2fV", swerve.getVoltage());
         telemetry.addLine();
         telemetry.addData("fl", "cur: %.1f° | tgt: %.1f°",
-                swerve.getModuleFL().getCurrentAngle(),
+                swerve.getModuleFL().getCurrAngle(),
                 swerve.getModuleFL().getTargetAngle());
         telemetry.addData("fr", "cur: %.1f° | tgt: %.1f°",
-                swerve.getModuleFR().getCurrentAngle(),
+                swerve.getModuleFR().getCurrAngle(),
                 swerve.getModuleFR().getTargetAngle());
         telemetry.addData("bl", "cur: %.1f° | tgt: %.1f°",
-                swerve.getModuleBL().getCurrentAngle(),
+                swerve.getModuleBL().getCurrAngle(),
                 swerve.getModuleBL().getTargetAngle());
         telemetry.addData("br", "cur: %.1f° | tgt: %.1f°",
-                swerve.getModuleBR().getCurrentAngle(),
+                swerve.getModuleBR().getCurrAngle(),
                 swerve.getModuleBR().getTargetAngle());
         telemetry.update();
     }
