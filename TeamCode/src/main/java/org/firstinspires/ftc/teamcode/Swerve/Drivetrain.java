@@ -34,6 +34,14 @@ public class Drivetrain {
         lf.update(); rf.update(); lb.update(); rb.update();
     }
 
+    public void defense() {
+        lf.set(new ModuleState(45, 0));
+        rf.set(new ModuleState(-45, 0));
+        lb.set(new ModuleState(-45, 0));
+        rb.set(new ModuleState(45, 0));
+        execute();
+    }
+
     public void drive(double x, double y, double rx, boolean fcd) {
         if (fcd) {
             double h = Math.toRadians(getHeading());

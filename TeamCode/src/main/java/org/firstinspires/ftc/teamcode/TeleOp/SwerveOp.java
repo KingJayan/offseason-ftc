@@ -13,16 +13,19 @@ import org.firstinspires.ftc.teamcode.helpers.Toggle;
 @TeleOp(name="swerve")
 public class SwerveOp extends OpMode {
     private Drivetrain dt;
-    private boolean fcd = true;
-    private final Toggle t = new Toggle();
+    private enum DriveMode { ROBOT, FIELD }
+    private DriveMode mode = DriveMode.FIELD;
+    
+    private final Toggle modeToggle = new Toggle();
     private final RateLimiter rX = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
     private final RateLimiter rY = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
     private final RateLimiter rR = new RateLimiter(Config.R_ACCEL, Config.R_DECEL);
 
-    //heading lock
+    //heading lock/hold logic
     private double tgtH = 0;
     private boolean hLock = false;
     private double lastHErr = 0;
+    private boolean lastRXNeutral = true;
     private final ElapsedTime hTimer = new ElapsedTime();
 
     @Override
@@ -46,62 +49,82 @@ public class SwerveOp extends OpMode {
         double ly = -gamepad1.left_stick_y;
         double rx = gamepad1.right_stick_x;
 
-        //mag-based scaling/corrected smoothstep
+        //ps button mode cycles
+        if (modeToggle.update(gamepad1.ps)) {
+            mode = (mode == DriveMode.ROBOT) ? DriveMode.FIELD : DriveMode.ROBOT;
+        }
+
+        //defense mode (button b)
+        if (gamepad1.b) {
+            dt.defense();
+            hLock = false; //disable heading lock in defense
+            return;
+        }
+
+        //magnitude scale the joyscik
         double x, y;
         if (Config.USE_MAG_SCALING) {
             double mag = Math.hypot(lx, ly);
             if (mag > 1.0) { lx /= mag; ly /= mag; mag = 1.0; }
-            double newMag = Config.apply(mag, Config.T_MODE);
-            double scale = mag > 0 ? newMag / mag : 0;
-            x = lx * scale;
-            y = ly * scale;
+            double scale = mag > 0 ? Config.apply(mag, Config.T_MODE) / mag : 0;
+            x = lx * scale; y = ly * scale;
         } else {
             x = Config.apply(lx, Config.T_MODE);
             y = Config.apply(ly, Config.T_MODE);
         }
 
-        //precision mode
+        //precision mode when any bumper pressed
         if (gamepad1.left_bumper || gamepad1.right_bumper) {
             x *= Config.PRECISION_SCALE;
             y *= Config.PRECISION_SCALE;
             rx *= Config.PRECISION_SCALE;
         }
 
-        //heading lock logic (dpad)
+        //heading hold on default
+        double curH = dt.getHeading();
+        boolean stickMoving = Math.abs(rx) > 0.05;
+
+        //snap to cardinal angles
         if (gamepad1.dpad_up) { tgtH = 0; hLock = true; }
         else if (gamepad1.dpad_left) { tgtH = 90; hLock = true; }
         else if (gamepad1.dpad_down) { tgtH = 180; hLock = true; }
         else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; }
 
-        //reset lock if manual rotation used
-        if (Math.abs(rx) > 0.05) hLock = false;
-        
+        //heading hold on stick release
+        if (Config.USE_HEADING_HOLD) {
+            if (stickMoving) {
+                hLock = false;
+                lastRXNeutral = false;
+            } else if (!lastRXNeutral) {
+                tgtH = curH; //capture current
+                hLock = true;
+                lastRXNeutral = true;
+            }
+        } else if (stickMoving) {
+            hLock = false;
+        }
+
         if (hLock) {
-            double dtH = hTimer.seconds();
-            hTimer.reset();
-            double curH = dt.getHeading();
+            double dtH = hTimer.seconds(); hTimer.reset();
             double err = MathUtil.wrap(tgtH - curH);
             double d = dtH > 0 ? (err - lastHErr) / dtH : 0;
             lastHErr = err;
             rx = (err * Config.H_KP) + (d * Config.H_KD);
         }
 
-        //reset 0deg rot (button x)
         if (gamepad1.x) dt.resetYaw();
 
-        //apply slew rate
         if (Config.SLEW) {
             x = rX.calculate(x);
             y = rY.calculate(y);
             rx = rR.calculate(rx);
         }
 
-        if (t.update(gamepad1.ps)) fcd = !fcd;
-        dt.drive(x, y, rx, fcd);
+        dt.drive(x, y, rx, mode != DriveMode.ROBOT);
 
-        telemetry.addData("mode", fcd ? "fcd" : "robot");
-        telemetry.addData("h", "%.1f", dt.getHeading());
-        telemetry.addData("lock", hLock ? "active (" + tgtH + ")" : "off");
+        telemetry.addData("mode", mode);
+        telemetry.addData("h", "%.1f", curH);
+        telemetry.addData("lock", hLock ? "active (" + (int)tgtH + ")" : "off");
         telemetry.update();
     }
 
