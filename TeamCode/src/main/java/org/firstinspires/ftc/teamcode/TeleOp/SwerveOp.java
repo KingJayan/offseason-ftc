@@ -21,7 +21,6 @@ public class SwerveOp extends OpMode {
     private final RateLimiter rY = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
     private final RateLimiter rR = new RateLimiter(Config.R_ACCEL, Config.R_DECEL);
 
-    //heading lock/hold logic
     private double tgtH = 0;
     private boolean hLock = false;
     private double lastHErr = 0;
@@ -49,19 +48,17 @@ public class SwerveOp extends OpMode {
         double ly = -gamepad1.left_stick_y;
         double rx = gamepad1.right_stick_x;
 
-        //ps button mode cycles
         if (modeToggle.update(gamepad1.ps)) {
             mode = (mode == DriveMode.ROBOT) ? DriveMode.FIELD : DriveMode.ROBOT;
+            gamepad1.rumble(150);
         }
 
-        //defense mode (button b)
         if (gamepad1.b) {
             dt.defense();
-            hLock = false; //disable heading lock in defense
+            hLock = false;
             return;
         }
 
-        //magnitude scale the joyscik
         double x, y;
         if (Config.USE_MAG_SCALING) {
             double mag = Math.hypot(lx, ly);
@@ -73,30 +70,40 @@ public class SwerveOp extends OpMode {
             y = Config.apply(ly, Config.T_MODE);
         }
 
-        //precision mode when any bumper pressed
         if (gamepad1.left_bumper || gamepad1.right_bumper) {
             x *= Config.PRECISION_SCALE;
             y *= Config.PRECISION_SCALE;
             rx *= Config.PRECISION_SCALE;
         }
 
-        //heading hold on default
         double curH = dt.getHeading();
         boolean stickMoving = Math.abs(rx) > 0.05;
 
-        //snap to cardinal angles
-        if (gamepad1.dpad_up) { tgtH = 0; hLock = true; }
-        else if (gamepad1.dpad_left) { tgtH = 90; hLock = true; }
-        else if (gamepad1.dpad_down) { tgtH = 180; hLock = true; }
-        else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; }
+        if (gamepad1.dpad_up) { tgtH = 0; hLock = true; gamepad1.rumble(100); }
+        else if (gamepad1.dpad_left) { tgtH = 90; hLock = true; gamepad1.rumble(100); }
+        else if (gamepad1.dpad_down) { tgtH = 180; hLock = true; gamepad1.rumble(100); }
+        else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; gamepad1.rumble(100); }
 
-        //heading hold on stick release
+        //passive alignment
+        if (Config.USE_PASSIVE_ALIGN && !stickMoving && !hLock) {
+            double absH = Math.abs(curH % 360);
+            double[] cardinals = {0, 90, 180, 270, -90, -180, -270};
+            for (double c : cardinals) {
+                if (Math.abs(MathUtil.wrap(c - curH)) < Config.PASSIVE_ALIGN_DEG) {
+                    tgtH = c;
+                    hLock = true;
+                    gamepad1.rumble(100);
+                    break;
+                }
+            }
+        }
+
         if (Config.USE_HEADING_HOLD) {
             if (stickMoving) {
                 hLock = false;
                 lastRXNeutral = false;
             } else if (!lastRXNeutral) {
-                tgtH = curH; //capture current
+                tgtH = curH;
                 hLock = true;
                 lastRXNeutral = true;
             }
@@ -112,7 +119,10 @@ public class SwerveOp extends OpMode {
             rx = (err * Config.H_KP) + (d * Config.H_KD);
         }
 
-        if (gamepad1.x) dt.resetYaw();
+        if (gamepad1.x) {
+            dt.resetYaw();
+            gamepad1.rumble(200);
+        }
 
         if (Config.SLEW) {
             x = rX.calculate(x);

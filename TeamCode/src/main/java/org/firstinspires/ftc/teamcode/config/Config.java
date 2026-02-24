@@ -34,8 +34,10 @@ public class Config {
     public static double H_KP = 0.015;
     public static double H_KD = 0.002;
     
+    //passive alignment
+    public static boolean USE_PASSIVE_ALIGN = true;//global enable
+    public static double PASSIVE_ALIGN_DEG = 2.0;//snap threshold
 
-    /**apply deadband and curve to single value*/
     /** apply deadband and curve to single value */
     public static double apply(double i, Mode m) {
         double abs = Math.abs(i);
