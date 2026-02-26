@@ -37,6 +37,11 @@ public class Config {
     //passive alignment
     public static boolean USE_PASSIVE_ALIGN = true;//global enable
     public static double PASSIVE_ALIGN_DEG = 2.0;//snap threshold
+    
+    //stall protection
+    public static boolean USE_STALL_PROT = true;
+    public static double STALL_TIMEOUT = 0.4;//seconds
+    public static double STALL_THRESHOLD = 2;//degrees
 
     /** apply deadband and curve to single value */
     public static double apply(double i, Mode m) {

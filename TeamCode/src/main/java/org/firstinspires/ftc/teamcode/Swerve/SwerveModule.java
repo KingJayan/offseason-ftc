@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.config.Config;
 import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.helpers.util.MathUtil;
 
@@ -24,6 +25,10 @@ public class SwerveModule {
     private boolean init = false;
 
     private final ElapsedTime timer = new ElapsedTime();
+    private final ElapsedTime stallTimer = new ElapsedTime();
+    private double lastStallA = 0;
+    private boolean stalled = false;
+
     private final boolean dRev, sRev;
     private final double off;
 
@@ -45,6 +50,7 @@ public class SwerveModule {
             lastS = curS;
             curA = curS / Constants.GEAR_RATIO;
             lastM = curA;
+            lastStallA = curA;
             init = true;
             return;
         }
@@ -53,6 +59,19 @@ public class SwerveModule {
         else if (delta < -180.0) rots++;
         lastS = curS;
         curA = ((rots * 360.0) + curS) / Constants.GEAR_RATIO;
+
+        //stall check logic
+        if (Config.USE_STALL_PROT) {
+            if (Math.abs(curA - lastStallA) > Config.STALL_THRESHOLD) {
+                lastStallA = curA;
+                stallTimer.reset();
+                stalled = false;
+            } else if (stallTimer.seconds() > Config.STALL_TIMEOUT && Math.abs(tgtA - curA) > Constants.TOLERANCE) {
+                stalled = true;
+            }
+        } else {
+            stalled = false;
+        }
     }
 
     private double getS() {
@@ -79,7 +98,7 @@ public class SwerveModule {
         lastM = curA;
 
         double sPwr = 0;
-        if (Math.abs(err) > Constants.TOLERANCE) {
+        if (Math.abs(err) > Constants.TOLERANCE && !stalled) {
             sPwr = Constants.KP * err - Constants.KD * d;
             sPwr += Math.signum(sPwr) * Constants.KSTATIC;
             sPwr = Math.max(-1.0, Math.min(1.0, sPwr));
@@ -92,6 +111,7 @@ public class SwerveModule {
 
     public double getCurA() { return curA; }
     public double getTgtA() { return tgtA; }
+    public boolean isStalled() { return stalled; }
     public void stop() {
         drive.setPower(0);
         steer.setPower(0);
