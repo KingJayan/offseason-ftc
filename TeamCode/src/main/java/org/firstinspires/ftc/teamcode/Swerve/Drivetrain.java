@@ -11,12 +11,18 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.config.Constants;
 
+import java.util.LinkedList;
+import java.util.Queue;
+
 /**swerve drivetrain controller*/
 public class Drivetrain {
     private final SwerveModule lf, rf, lb, rb;
     private final IMU imu;
     private final VoltageSensor vSens;
     private final Kinematics kin;
+    
+    private final Queue<Double> vQ = new LinkedList<>();
+    private double vSum = 0;
 
     public Drivetrain(HardwareMap hw) {
         lf = new SwerveModule(hw.get(DcMotorEx.class, Constants.LF_DRIVE), hw.get(CRServo.class, Constants.LF_STEER), hw.get(AnalogInput.class, Constants.LF_ENC), Constants.LF_DRIVE_REV, Constants.LF_STEER_REV, Constants.LF_OFF);
@@ -32,6 +38,12 @@ public class Drivetrain {
 
     public void update() {
         lf.update(); rf.update(); lb.update(); rb.update();
+        
+        //vcomp filter
+        double v = vSens.getVoltage();
+        vSum += v;
+        vQ.add(v);
+        if (vQ.size() > Constants.VOLT_FILTER_N) vSum -= vQ.poll();
     }
 
     public void defense() {
@@ -57,7 +69,8 @@ public class Drivetrain {
     }
 
     private void execute() {
-        double vComp = Constants.NOMINAL_VOLTAGE / vSens.getVoltage();
+        double vAvg = vSum / Math.max(1, vQ.size());
+        double vComp = Constants.NOMINAL_VOLTAGE / vAvg;
         lf.execute(vComp); rf.execute(vComp); lb.execute(vComp); rb.execute(vComp);
     }
 

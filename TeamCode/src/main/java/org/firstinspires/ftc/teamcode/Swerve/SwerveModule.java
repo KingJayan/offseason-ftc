@@ -16,57 +16,56 @@ public class SwerveModule {
     private final CRServo steer;
     private final AnalogInput enc;
 
-    private double curA = 0;
-    private double tgtA = 0;
-    private double pwr = 0;
-    private double lastM = 0;
-    private double lastS = 0;
-    private double rots = 0;
+    private double curDeg = 0;
+    private double tgtDeg = 0;
+    private double drivePct = 0;
+    private double lastDeg = 0;
+    private double lastServoDeg = 0;
+    private double totalRots = 0;
     private boolean init = false;
 
     private final ElapsedTime timer = new ElapsedTime();
     private final ElapsedTime stallTimer = new ElapsedTime();
-    private double lastStallA = 0;
+    private double lastStallDeg = 0;
     private boolean stalled = false;
 
     private final boolean dRev, sRev;
-    private final double off;
+    private final double offsetDeg;
 
-    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput enc, boolean dRev, boolean sRev, double off) {
+    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput enc, boolean dRev, boolean sRev, double offsetDeg) {
         this.drive = drive;
         this.steer = steer;
         this.enc = enc;
         this.dRev = dRev;
         this.sRev = sRev;
-        this.off = off;
+        this.offsetDeg = offsetDeg;
         this.drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         this.drive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
 
     /**track rotations for rollover*/
     public void update() {
-        double curS = getS();
+        double curS = getServoDeg();
         if (!init) {
-            lastS = curS;
-            curA = curS / Constants.GEAR_RATIO;
-            lastM = curA;
-            lastStallA = curA;
+            lastServoDeg = curS;
+            curDeg = curS / Constants.GEAR_RATIO;
+            lastDeg = curDeg;
+            lastStallDeg = curDeg;
             init = true;
             return;
         }
-        double delta = curS - lastS;
-        if (delta > 180.0) rots--;
-        else if (delta < -180.0) rots++;
-        lastS = curS;
-        curA = ((rots * 360.0) + curS) / Constants.GEAR_RATIO;
+        double delta = curS - lastServoDeg;
+        if (delta > 180.0) totalRots--;
+        else if (delta < -180.0) totalRots++;
+        lastServoDeg = curS;
+        curDeg = ((totalRots * 360.0) + curS) / Constants.GEAR_RATIO;
 
-        //stall check logic
         if (Config.USE_STALL_PROT) {
-            if (Math.abs(curA - lastStallA) > Config.STALL_THRESHOLD) {
-                lastStallA = curA;
+            if (Math.abs(curDeg - lastStallDeg) > Config.STALL_THRESHOLD) {
+                lastStallDeg = curDeg;
                 stallTimer.reset();
                 stalled = false;
-            } else if (stallTimer.seconds() > Config.STALL_TIMEOUT && Math.abs(tgtA - curA) > Constants.TOLERANCE) {
+            } else if (stallTimer.seconds() > Config.STALL_TIMEOUT && Math.abs(tgtDeg - curDeg) > Constants.TOLERANCE) {
                 stalled = true;
             }
         } else {
@@ -74,47 +73,50 @@ public class SwerveModule {
         }
     }
 
-    private double getS() {
+    private double getServoDeg() {
         double v = Math.min(Constants.MAX_V, Math.max(0, enc.getVoltage()));
-        return MathUtil.wrap((v / Constants.MAX_V) * 360 - off);
+        return MathUtil.wrap((v / Constants.MAX_V) * 360 - offsetDeg);
     }
 
     public void set(ModuleState state) {
         if (Math.abs(state.speed) < Constants.MODULE_DB) {
-            this.pwr = 0;
+            this.drivePct = 0;
             return;
         }
-        ModuleState opt = state.optimize(curA);
-        this.tgtA = opt.angle;
-        this.pwr = opt.speed;
+        ModuleState opt = state.optimize(curDeg);
+        this.tgtDeg = opt.angle;
+        this.drivePct = opt.speed;
     }
 
     /**pid loop*/
     public void execute(double vComp) {
-        double dt = timer.seconds();
+        double dtSec = timer.seconds();
         timer.reset();
-        double err = MathUtil.wrap(tgtA - curA);
-        double d = dt > 0 ? (curA - lastM) / dt : 0;
-        lastM = curA;
+        double errDeg = MathUtil.wrap(tgtDeg - curDeg);
+        double dDegSec = dtSec > 0 ? (curDeg - lastDeg) / dtSec : 0;
+        lastDeg = curDeg;
 
         double sPwr = 0;
-        if (Math.abs(err) > Constants.TOLERANCE && !stalled) {
-            sPwr = Constants.KP * err - Constants.KD * d;
-            sPwr += Math.signum(sPwr) * Constants.KSTATIC;
-            sPwr = Math.max(-1.0, Math.min(1.0, sPwr));
+        //suppress jitter if no movement requested and near target
+        if (Math.abs(errDeg) > Constants.STEER_JITTER_DEG || Math.abs(drivePct) > 0) {
+            if (Math.abs(errDeg) > Constants.TOLERANCE && !stalled) {
+                sPwr = Constants.KP * errDeg - Constants.KD * dDegSec;
+                sPwr += Math.signum(sPwr) * Constants.KSTATIC;
+                sPwr = Math.max(-1.0, Math.min(1.0, sPwr));
+            }
         }
         steer.setPower(sRev ? -sPwr : sPwr);
 
-        double dPwr = (dRev ? -pwr : pwr) * vComp;
-        drive.setPower(Math.max(-1.0, Math.min(1.0, dPwr)));
+        double outPct = (dRev ? -drivePct : drivePct) * vComp;
+        drive.setPower(Math.max(-1.0, Math.min(1.0, outPct)));
     }
 
-    public double getCurA() { return curA; }
-    public double getTgtA() { return tgtA; }
+    public double getCurDeg() { return curDeg; }
+    public double getTgtDeg() { return tgtDeg; }
     public boolean isStalled() { return stalled; }
     public void stop() {
         drive.setPower(0);
         steer.setPower(0);
-        lastM = curA;
+        lastDeg = curDeg;
     }
 }

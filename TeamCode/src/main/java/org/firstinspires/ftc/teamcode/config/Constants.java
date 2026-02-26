@@ -59,10 +59,12 @@ public class Constants {
 
     //voltage
     public static double NOMINAL_VOLTAGE = 13.1;
+    public static int VOLT_FILTER_N = 10;
 
     //deadbands
     public static double STICK_DB = 0.05;
     public static double MODULE_DB = 0.01;
+    public static double STEER_JITTER_DEG = 0.5;
 
     //hardware
     public static double GEAR_RATIO = 3.2;
