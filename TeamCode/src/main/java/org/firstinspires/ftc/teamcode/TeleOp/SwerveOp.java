@@ -63,6 +63,7 @@ public class SwerveOp extends OpMode {
         if (Config.USE_MAG_SCALING) {
             double mag = Math.hypot(lx, ly);
             if (mag > 1.0) { lx /= mag; ly /= mag; mag = 1.0; }
+
             double scale = mag > 0 ? Config.apply(mag, Config.T_MODE) / mag : 0;
             x = lx * scale; y = ly * scale;
         } else {

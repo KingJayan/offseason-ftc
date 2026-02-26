@@ -42,6 +42,7 @@ android {
         unitTests.all {
             useJUnitPlatform()
         }
+        unitTests.returnDefaultValues = true
     }
 }
 
@@ -55,10 +56,14 @@ tasks.withType(Test) {
 
 //Sloth addition 11/27/25
 repositories {
+    mavenCentral()
+    google()
     maven {
         url = "https://repo.dairy.foundation/releases"
+
     }
 }
+
 
 dependencies {
     implementation project(':FtcRobotController')
@@ -69,21 +74,18 @@ dependencies {
     implementation 'dev.nextftc:bindings:1.0.1'
     implementation 'dev.nextftc.extensions:pedro:1.0.0'
 
-    implementation("dev.frozenmilk.sinister:Sloth:0.2.4")
-    implementation("com.acmerobotics.slothboard:dashboard:0.2.4+0.5.1")
-
-    // implementation("com.bylazar.sloth:fullpanels:0.2.4+1.0.12")
-
-    implementation 'org.ftclib.ftclib:core:2.1.1' // core
-
-
     implementation("com.pedropathing:ftc:2.0.6") {
         exclude group: "com.acmerobotics.dashboard"
     }
 
-    testImplementation 'org.mockito:mockito-inline:5.0.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:5.0.0'
+    //implementation("dev.frozenmilk.sinister:Sloth:0.2.4")
+    //implementation("com.acmerobotics.slothboard:dashboard:0.2.4+0.5.1") switched to panels
+    implementation("com.bylazar.sloth:fullpanels:0.2.4+1.0.12")
 
+    //unit testing junit + mockito
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
+
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.11.0'
 }
