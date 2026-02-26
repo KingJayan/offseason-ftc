@@ -29,8 +29,10 @@ public class Config {
 
     //driver util
     public static boolean USE_MAG_SCALING = false;
+
     public static boolean USE_HEADING_HOLD = true;
     public static double PRECISION_SCALE = 0.4;
+
     public static double H_KP = 0.015;
     public static double H_KD = 0.002;
     

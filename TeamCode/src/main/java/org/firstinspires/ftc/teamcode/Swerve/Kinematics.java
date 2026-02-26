@@ -14,6 +14,18 @@ public class Kinematics {
 
     /**calc states from velocities*/
     public ModuleState[] calculate(double x, double y, double rx) {
+        //rotation priority scaling
+        //ensure translation + rotation doesnt exceed 1.0 total
+        double driveMag = Math.hypot(x, y);
+        double rotMag = Math.abs(rx);
+        
+        if (driveMag + rotMag > 1.0) {
+            //scale translation down
+            double scale = (1.0 - rotMag) / driveMag;
+            x *= scale;
+            y *= scale;
+        }
+
         ModuleState[] states = new ModuleState[4];
         double max = 0.0;
         double[] wX = new double[4];
@@ -31,6 +43,7 @@ public class Kinematics {
             max = Math.max(max, wS[i]);
         }
 
+        //standard normalization
         if (max > 1.0) {
             for (int i = 0; i < 4; i++) wS[i] /= max;
         }

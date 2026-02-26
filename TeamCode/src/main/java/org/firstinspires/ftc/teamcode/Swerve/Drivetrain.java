@@ -25,10 +25,10 @@ public class Drivetrain {
     private double vSum = 0;
 
     public Drivetrain(HardwareMap hw) {
-        lf = new SwerveModule(hw.get(DcMotorEx.class, Constants.LF_DRIVE), hw.get(CRServo.class, Constants.LF_STEER), hw.get(AnalogInput.class, Constants.LF_ENC), Constants.LF_DRIVE_REV, Constants.LF_STEER_REV, Constants.LF_OFF);
-        rf = new SwerveModule(hw.get(DcMotorEx.class, Constants.RF_DRIVE), hw.get(CRServo.class, Constants.RF_STEER), hw.get(AnalogInput.class, Constants.RF_ENC), Constants.RF_DRIVE_REV, Constants.RF_STEER_REV, Constants.RF_OFF);
-        lb = new SwerveModule(hw.get(DcMotorEx.class, Constants.LB_DRIVE), hw.get(CRServo.class, Constants.LB_STEER), hw.get(AnalogInput.class, Constants.LB_ENC), Constants.LB_DRIVE_REV, Constants.LB_STEER_REV, Constants.LB_OFF);
-        rb = new SwerveModule(hw.get(DcMotorEx.class, Constants.RB_DRIVE), hw.get(CRServo.class, Constants.RB_STEER), hw.get(AnalogInput.class, Constants.RB_ENC), Constants.RB_DRIVE_REV, Constants.RB_STEER_REV, Constants.RB_OFF);
+        lf = new SwerveModule(hw.get(DcMotorEx.class, Constants.LF_DRIVE), hw.get(CRServo.class, Constants.LF_STEER), hw.get(AnalogInput.class, Constants.LF_ENC), Constants.LF_DRIVE_REV, Constants.LF_STEER_REV, Constants.LF_OFF, 0);
+        rf = new SwerveModule(hw.get(DcMotorEx.class, Constants.RF_DRIVE), hw.get(CRServo.class, Constants.RF_STEER), hw.get(AnalogInput.class, Constants.RF_ENC), Constants.RF_DRIVE_REV, Constants.RF_STEER_REV, Constants.RF_OFF, 0);
+        lb = new SwerveModule(hw.get(DcMotorEx.class, Constants.LB_DRIVE), hw.get(CRServo.class, Constants.LB_STEER), hw.get(AnalogInput.class, Constants.LB_ENC), Constants.LB_DRIVE_REV, Constants.LB_STEER_REV, Constants.LB_OFF, 0);
+        rb = new SwerveModule(hw.get(DcMotorEx.class, Constants.RB_DRIVE), hw.get(CRServo.class, Constants.RB_STEER), hw.get(AnalogInput.class, Constants.RB_ENC), Constants.RB_DRIVE_REV, Constants.RB_STEER_REV, Constants.RB_OFF, 0);
 
         kin = new Kinematics();
         imu = hw.get(IMU.class, Constants.IMU);

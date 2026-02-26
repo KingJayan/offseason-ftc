@@ -32,13 +32,14 @@ public class SwerveModule {
     private final boolean dRev, sRev;
     private final double offsetDeg;
 
-    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput enc, boolean dRev, boolean sRev, double offsetDeg) {
+    public SwerveModule(DcMotorEx drive, CRServo steer, AnalogInput enc, boolean dRev, boolean sRev, double offsetDeg, double initRots) {
         this.drive = drive;
         this.steer = steer;
         this.enc = enc;
         this.dRev = dRev;
         this.sRev = sRev;
         this.offsetDeg = offsetDeg;
+        this.totalRots = initRots;
         this.drive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         this.drive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     }
@@ -48,7 +49,7 @@ public class SwerveModule {
         double curS = getServoDeg();
         if (!init) {
             lastServoDeg = curS;
-            curDeg = curS / Constants.GEAR_RATIO;
+            curDeg = ((totalRots * 360.0) + curS) / Constants.GEAR_RATIO;
             lastDeg = curDeg;
             lastStallDeg = curDeg;
             init = true;
@@ -97,7 +98,6 @@ public class SwerveModule {
         lastDeg = curDeg;
 
         double sPwr = 0;
-        //suppress jitter if no movement requested and near target
         if (Math.abs(errDeg) > Constants.STEER_JITTER_DEG || Math.abs(drivePct) > 0) {
             if (Math.abs(errDeg) > Constants.TOLERANCE && !stalled) {
                 sPwr = Constants.KP * errDeg - Constants.KD * dDegSec;
@@ -113,6 +113,7 @@ public class SwerveModule {
 
     public double getCurDeg() { return curDeg; }
     public double getTgtDeg() { return tgtDeg; }
+    public double getRots() { return totalRots; }
     public boolean isStalled() { return stalled; }
     public void stop() {
         drive.setPower(0);
