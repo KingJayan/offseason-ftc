@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.Swerve;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -19,7 +18,6 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
-import org.firstinspires.ftc.teamcode.config.Constants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -62,52 +60,43 @@ public class DrivetrainTest {
         dt = new Drivetrain(hw);
     }
 
-//    @Test
-//    public void testDefense() {
-//        dt.defense();
-//        verify(str, times(4)).setPower(anyDouble());
-//    }
-//
-//    @Test
-//    public void testStop() {
-//        dt.stop();
-//        verify(drv, times(4)).setPower(0.0);
-//        verify(str, times(4)).setPower(0.0);
-//    }
+    @Test
+    public void testDefense() {
+        dt.defense();
+        //now checks for 3 interactions
+        verify(str, times(3)).setPower(anyDouble());
+    }
 
-//    @Test
-//    public void testUpdate() {
-//        //verify update calls dont crash and reach sensors
-//        dt.update();
-//        verify(enc, times(4)).getVoltage();
-//    }
+    @Test
+    public void testStop() {
+        dt.stop();
+        verify(drv, times(3)).setPower(0.0);
+        verify(str, times(3)).setPower(0.0);
+    }
+
+    @Test
+    public void testUpdate() {
+        dt.update();
+        verify(enc, times(3)).getVoltage();
+    }
 
     @Test
     public void testDriveRobCentric() {
-        //test basic movement
         dt.drive(0.5, 0.5, 0.0, false);
-        verify(drv, times(4)).setPower(anyDouble());
-        verify(str, times(4)).setPower(anyDouble());
+        verify(drv, times(3)).setPower(anyDouble());
+        verify(str, times(3)).setPower(anyDouble());
     }
 
     @Test
     public void testDriveFieldCentric() {
-        //test movement with imu
         dt.drive(0.5, 0.0, 0.0, true);
         verify(imu, times(1)).getRobotYawPitchRollAngles();
-        verify(drv, times(4)).setPower(anyDouble());
+        verify(drv, times(3)).setPower(anyDouble());
     }
 
-//    @Test
-//    public void testDriveDeadband() {
-//        //test small inputs are ignored
-//        dt.drive(0.001, 0.001, 0.001, false);
-//        verify(drv, times(4)).setPower(0.0);
-//    }
-//
-//    @Test
-//    public void testResetYaw() {
-//        dt.resetYaw();
-//        verify(imu, times(1)).resetYaw();
-//    }
+    @Test
+    public void testResetYaw() {
+        dt.resetYaw();
+        verify(imu, times(1)).resetYaw();
+    }
 }

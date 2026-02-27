@@ -60,7 +60,6 @@ public class SwerveOp extends OpMode {
             wasDefense = true;
             return;
         } else if (wasDefense) {
-            //ensure modules return from x-lock cleanly
             wasDefense = false;
         }
 
@@ -137,7 +136,6 @@ public class SwerveOp extends OpMode {
 
         telemetry.addData("mode", mode);
         telemetry.addData("h", "%.1f", curH);
-        telemetry.addData("lock", hLock ? "active (" + (int)tgtH + ")" : "off");
         telemetry.addData("l", "%.1f", dt.getL().getCurDeg());
         telemetry.addData("r", "%.1f", dt.getR().getCurDeg());
         telemetry.addData("b", "%.1f", dt.getB().getCurDeg());

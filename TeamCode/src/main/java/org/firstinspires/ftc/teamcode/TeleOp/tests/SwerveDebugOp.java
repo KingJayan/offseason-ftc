@@ -4,8 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.Swerve.Drivetrain;
 import org.firstinspires.ftc.teamcode.Swerve.SwerveModule;
+import org.firstinspires.ftc.teamcode.Swerve.ModuleState;
 
-/**simple opmode to verify hardware and module orientation*/
+/**verifies 3-wheeled hardware orientation*/
 @TeleOp(name="swerve debug")
 public class SwerveDebugOp extends OpMode {
     private Drivetrain dt;
@@ -19,40 +20,32 @@ public class SwerveDebugOp extends OpMode {
     public void loop() {
         dt.update();
         
-        // test 1: individual module rotation
-        // use a,b,x,y to rotate each module to 90 degrees
-        if (gamepad1.a) dt.getLF().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(90, 0));
-        else if (gamepad1.b) dt.getRF().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(90, 0));
-        else if (gamepad1.x) dt.getLB().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(90, 0));
-        else if (gamepad1.y) dt.getRB().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(90, 0));
+        // individual rotation tests
+        if (gamepad1.a) dt.getL().set(new ModuleState(90, 0));
+        else if (gamepad1.b) dt.getR().set(new ModuleState(90, 0));
+        else if (gamepad1.x) dt.getB().set(new ModuleState(90, 0));
         else {
-            dt.getLF().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, 0));
-            dt.getRF().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, 0));
-            dt.getLB().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, 0));
-            dt.getRB().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, 0));
+            dt.getL().set(new ModuleState(0, 0));
+            dt.getR().set(new ModuleState(0, 0));
+            dt.getB().set(new ModuleState(0, 0));
         }
 
-        // test 2: drive motor check
-        // use right trigger to spin all drive motors forward
+        // drive motor tests
         double p = gamepad1.right_trigger;
         if (p > 0.1) {
-            dt.getLF().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, p));
-            dt.getRF().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, p));
-            dt.getLB().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, p));
-            dt.getRB().set(new org.firstinspires.ftc.teamcode.Swerve.ModuleState(0, p));
+            dt.getL().set(new ModuleState(0, p));
+            dt.getR().set(new ModuleState(0, p));
+            dt.getB().set(new ModuleState(0, p));
         }
 
-        dt.drive(0,0,0,false); // trigger execution logic
+        dt.drive(0,0,0,false);
 
-        telemetry.addData("heading", "%.1f", dt.getHeading());
-        addModTelemetry("lf", dt.getLF());
-        addModTelemetry("rf", dt.getRF());
-        addModTelemetry("lb", dt.getLB());
-        addModTelemetry("rb", dt.getRB());
+        telemetry.addData("h", "%.1f", dt.getHeading());
+        addMod("l", dt.getL()); addMod("r", dt.getR()); addMod("b", dt.getB());
         telemetry.update();
     }
 
-    private void addModTelemetry(String name, SwerveModule m) {
-        telemetry.addData(name, "cur:%.1f tgt:%.1f", m.getCurA(), m.getTgtA());
+    private void addMod(String n, SwerveModule m) {
+        telemetry.addData(n, "cur:%.1f tgt:%.1f", m.getCurDeg(), m.getTgtDeg());
     }
 }

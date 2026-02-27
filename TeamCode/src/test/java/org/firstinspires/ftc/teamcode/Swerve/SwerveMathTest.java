@@ -51,11 +51,10 @@ public class SwerveMathTest {
         //pure ccw rotation
         ModuleState[] states = kin.calculate(0, 0, 1);
         
-        //lf (top-left) should point back-left (-135 or 225)
-        //rf (top-right) should point forward-left (45)
-        //lb (bottom-left) should point back-right (-45)
-        //rb (bottom-right) should point forward-right (135)
+        //verify all 3 modules move
+        assertEquals(3, states.length);
         assertTrue(states[0].speed > 0);
         assertTrue(states[1].speed > 0);
+        assertTrue(states[2].speed > 0);
     }
 }
