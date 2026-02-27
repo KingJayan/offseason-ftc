@@ -14,9 +14,9 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 import java.util.LinkedList;
 import java.util.Queue;
 
-/**swerve drivetrain controller*/
+/**swerve drivetrain controller for 3-wheeled layout*/
 public class Drivetrain {
-    private final SwerveModule lf, rf, lb, rb;
+    private final SwerveModule l, r, b;
     private final IMU imu;
     private final VoltageSensor vSens;
     private final Kinematics kin;
@@ -25,10 +25,9 @@ public class Drivetrain {
     private double vSum = 0;
 
     public Drivetrain(HardwareMap hw) {
-        lf = new SwerveModule(hw.get(DcMotorEx.class, Constants.LF_DRIVE), hw.get(CRServo.class, Constants.LF_STEER), hw.get(AnalogInput.class, Constants.LF_ENC), Constants.LF_DRIVE_REV, Constants.LF_STEER_REV, Constants.LF_OFF, 0);
-        rf = new SwerveModule(hw.get(DcMotorEx.class, Constants.RF_DRIVE), hw.get(CRServo.class, Constants.RF_STEER), hw.get(AnalogInput.class, Constants.RF_ENC), Constants.RF_DRIVE_REV, Constants.RF_STEER_REV, Constants.RF_OFF, 0);
-        lb = new SwerveModule(hw.get(DcMotorEx.class, Constants.LB_DRIVE), hw.get(CRServo.class, Constants.LB_STEER), hw.get(AnalogInput.class, Constants.LB_ENC), Constants.LB_DRIVE_REV, Constants.LB_STEER_REV, Constants.LB_OFF, 0);
-        rb = new SwerveModule(hw.get(DcMotorEx.class, Constants.RB_DRIVE), hw.get(CRServo.class, Constants.RB_STEER), hw.get(AnalogInput.class, Constants.RB_ENC), Constants.RB_DRIVE_REV, Constants.RB_STEER_REV, Constants.RB_OFF, 0);
+        l = new SwerveModule(hw.get(DcMotorEx.class, Constants.L_DRIVE), hw.get(CRServo.class, Constants.L_STEER), hw.get(AnalogInput.class, Constants.L_ENC), Constants.L_DRIVE_REV, Constants.L_STEER_REV, Constants.L_OFF, 0);
+        r = new SwerveModule(hw.get(DcMotorEx.class, Constants.R_DRIVE), hw.get(CRServo.class, Constants.R_STEER), hw.get(AnalogInput.class, Constants.R_ENC), Constants.R_DRIVE_REV, Constants.R_STEER_REV, Constants.R_OFF, 0);
+        b = new SwerveModule(hw.get(DcMotorEx.class, Constants.B_DRIVE), hw.get(CRServo.class, Constants.B_STEER), hw.get(AnalogInput.class, Constants.B_ENC), Constants.B_DRIVE_REV, Constants.B_STEER_REV, Constants.B_OFF, 0);
 
         kin = new Kinematics();
         imu = hw.get(IMU.class, Constants.IMU);
@@ -37,9 +36,8 @@ public class Drivetrain {
     }
 
     public void update() {
-        lf.update(); rf.update(); lb.update(); rb.update();
+        l.update(); r.update(); b.update();
         
-        //vcomp filter
         double v = vSens.getVoltage();
         vSum += v;
         vQ.add(v);
@@ -47,10 +45,10 @@ public class Drivetrain {
     }
 
     public void defense() {
-        lf.set(new ModuleState(45, 0));
-        rf.set(new ModuleState(-45, 0));
-        lb.set(new ModuleState(-45, 0));
-        rb.set(new ModuleState(45, 0));
+        //triangular kiwi lock pattern
+        l.set(new ModuleState(150, 0));
+        r.set(new ModuleState(-150, 0));
+        b.set(new ModuleState(-90, 0));
         execute();
     }
 
@@ -64,22 +62,21 @@ public class Drivetrain {
             stop(); return;
         }
         ModuleState[] s = kin.calculate(x, y, rx);
-        lf.set(s[0]); rf.set(s[1]); lb.set(s[2]); rb.set(s[3]);
+        l.set(s[0]); r.set(s[1]); b.set(s[2]);
         execute();
     }
 
     private void execute() {
         double vAvg = vSum / Math.max(1, vQ.size());
         double vComp = Constants.NOMINAL_VOLTAGE / vAvg;
-        lf.execute(vComp); rf.execute(vComp); lb.execute(vComp); rb.execute(vComp);
+        l.execute(vComp); r.execute(vComp); b.execute(vComp);
     }
 
     public double getHeading() { return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES); }
     public void resetYaw() { imu.resetYaw(); }
-    public void stop() { lf.stop(); rf.stop(); lb.stop(); rb.stop(); }
-    public SwerveModule getLF() { return lf; }
-    public SwerveModule getRF() { return rf; }
-    public SwerveModule getLB() { return lb; }
-    public SwerveModule getRB() { return rb; }
+    public void stop() { l.stop(); r.stop(); b.stop(); }
+    public SwerveModule getL() { return l; }
+    public SwerveModule getR() { return r; }
+    public SwerveModule getB() { return b; }
     public double getV() { return vSens.getVoltage(); }
 }

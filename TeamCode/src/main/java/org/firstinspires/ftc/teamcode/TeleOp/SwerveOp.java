@@ -25,6 +25,7 @@ public class SwerveOp extends OpMode {
     private boolean hLock = false;
     private double lastHErr = 0;
     private boolean lastRXNeutral = true;
+    private boolean wasDefense = false;
     private final ElapsedTime hTimer = new ElapsedTime();
 
     @Override
@@ -56,14 +57,17 @@ public class SwerveOp extends OpMode {
         if (gamepad1.b) {
             dt.defense();
             hLock = false;
+            wasDefense = true;
             return;
+        } else if (wasDefense) {
+            //ensure modules return from x-lock cleanly
+            wasDefense = false;
         }
 
         double x, y;
         if (Config.USE_MAG_SCALING) {
             double mag = Math.hypot(lx, ly);
             if (mag > 1.0) { lx /= mag; ly /= mag; mag = 1.0; }
-
             double scale = mag > 0 ? Config.apply(mag, Config.T_MODE) / mag : 0;
             x = lx * scale; y = ly * scale;
         } else {
@@ -85,10 +89,8 @@ public class SwerveOp extends OpMode {
         else if (gamepad1.dpad_down) { tgtH = 180; hLock = true; gamepad1.rumble(100); }
         else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; gamepad1.rumble(100); }
 
-        //passive alignment
         if (Config.USE_PASSIVE_ALIGN && !stickMoving && !hLock) {
-            double absH = Math.abs(curH % 360);
-            double[] cardinals = {0, 90, 180, 270, -90, -180, -270};
+            double[] cardinals = {0, 90, 180, -90};
             for (double c : cardinals) {
                 if (Math.abs(MathUtil.wrap(c - curH)) < Config.PASSIVE_ALIGN_DEG) {
                     tgtH = c;
@@ -136,6 +138,9 @@ public class SwerveOp extends OpMode {
         telemetry.addData("mode", mode);
         telemetry.addData("h", "%.1f", curH);
         telemetry.addData("lock", hLock ? "active (" + (int)tgtH + ")" : "off");
+        telemetry.addData("l", "%.1f", dt.getL().getCurDeg());
+        telemetry.addData("r", "%.1f", dt.getR().getCurDeg());
+        telemetry.addData("b", "%.1f", dt.getB().getCurDeg());
         telemetry.update();
     }
 

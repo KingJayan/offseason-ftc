@@ -19,10 +19,10 @@ public class Constants {
 
     static {
         // initialization of follower constants for swerve
-        followerConstants.coefficientsDrivePIDF.setCoefficients(5, 0, 0.01, 0,0);
+        followerConstants.coefficientsDrivePIDF.setCoefficients(5, 0, 0.01, 0, 0);
         followerConstants.coefficientsTranslationalPIDF.setCoefficients(0.2, 0, 0.01, 0);
         followerConstants.coefficientsHeadingPIDF.setCoefficients(2, 0, 0.05, 0);
-
+        
         followerConstants.forwardZeroPowerAcceleration = 1.5;
     }
 

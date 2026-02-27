@@ -7,39 +7,33 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 @Configurable
 public class Constants {
     //ds names
-    public static String LF_DRIVE = "leftFront";
-    public static String RF_DRIVE = "rightFront";
-    public static String LB_DRIVE = "leftBack";
-    public static String RB_DRIVE = "rightBack";
+    public static String L_DRIVE = "leftDrive";
+    public static String R_DRIVE = "rightDrive";
+    public static String B_DRIVE = "backDrive";
 
-    public static String LF_STEER = "steerFL";
-    public static String RF_STEER = "steerFR";
-    public static String LB_STEER = "steerBL";
-    public static String RB_STEER = "steerBR";
+    public static String L_STEER = "leftSteer";
+    public static String R_STEER = "rightSteer";
+    public static String B_STEER = "backSteer";
 
-    public static String LF_ENC = "sensorFL";
-    public static String RF_ENC = "sensorFR";
-    public static String LB_ENC = "sensorBL";
-    public static String RB_ENC = "sensorBR";
+    public static String L_ENC = "leftEnc";
+    public static String R_ENC = "rightEnc";
+    public static String B_ENC = "backEnc";
 
     public static String IMU = "imu";
 
     //directions
-    public static boolean LF_DRIVE_REV = false;
-    public static boolean RF_DRIVE_REV = false;
-    public static boolean LB_DRIVE_REV = false;
-    public static boolean RB_DRIVE_REV = false;
+    public static boolean L_DRIVE_REV = false;
+    public static boolean R_DRIVE_REV = false;
+    public static boolean B_DRIVE_REV = false;
 
-    public static boolean LF_STEER_REV = false;
-    public static boolean RF_STEER_REV = false;
-    public static boolean LB_STEER_REV = false;
-    public static boolean RB_STEER_REV = false;
+    public static boolean L_STEER_REV = false;
+    public static boolean R_STEER_REV = false;
+    public static boolean B_STEER_REV = false;
 
     //offsets
-    public static double LF_OFF = 0.0;
-    public static double RF_OFF = 0.0;
-    public static double LB_OFF = 0.0;
-    public static double RB_OFF = 0.0;
+    public static double L_OFF = 0.0;
+    public static double R_OFF = 0.0;
+    public static double B_OFF = 0.0;
 
     //imu
     public static RevHubOrientationOnRobot.LogoFacingDirection LOGO =
@@ -48,8 +42,7 @@ public class Constants {
             RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
 
     //dims
-    public static double TRACK_WIDTH = 0.35;
-    public static double WHEEL_BASE = 0.35;
+    public static double ROBOT_RADIUS = 0.2; //dist from center to wheel (meters)
 
     //steer pid
     public static double KP = 0.02;

@@ -2,38 +2,46 @@ package org.firstinspires.ftc.teamcode.Swerve;
 
 import org.firstinspires.ftc.teamcode.config.Constants;
 
-/**swerve kinematics*/
+/**swerve kinematics for 3-wheeled layout*/
 public class Kinematics {
     private final double[] mX;
     private final double[] mY;
 
     public Kinematics() {
-        mX = new double[] {Constants.WHEEL_BASE/2, Constants.WHEEL_BASE/2, -Constants.WHEEL_BASE/2, -Constants.WHEEL_BASE/2};
-        mY = new double[] {Constants.TRACK_WIDTH/2, -Constants.TRACK_WIDTH/2, Constants.TRACK_WIDTH/2, -Constants.TRACK_WIDTH/2};
+        double r = Constants.ROBOT_RADIUS;
+        // left: 60 deg, right: -60 deg, back: 180 deg
+        // x: right, y: forward
+        mX = new double[] {
+            r * Math.sin(Math.toRadians(60)),  // left
+            r * Math.sin(Math.toRadians(-60)), // right
+            r * Math.sin(Math.toRadians(180))  // back
+        };
+        mY = new double[] {
+            r * Math.cos(Math.toRadians(60)),  // left
+            r * Math.cos(Math.toRadians(-60)), // right
+            r * Math.cos(Math.toRadians(180))  // back
+        };
     }
 
     /**calc states from velocities*/
     public ModuleState[] calculate(double x, double y, double rx) {
-        //rotation priority scaling
-        //ensure translation + rotation doesnt exceed 1.0 total
         double driveMag = Math.hypot(x, y);
         double rotMag = Math.abs(rx);
         
         if (driveMag + rotMag > 1.0) {
-            //scale translation down
             double scale = (1.0 - rotMag) / driveMag;
             x *= scale;
             y *= scale;
         }
 
-        ModuleState[] states = new ModuleState[4];
+        ModuleState[] states = new ModuleState[3];
         double max = 0.0;
-        double[] wX = new double[4];
-        double[] wY = new double[4];
-        double[] wS = new double[4];
-        double[] wA = new double[4];
+        double[] wX = new double[3];
+        double[] wY = new double[3];
+        double[] wS = new double[3];
+        double[] wA = new double[3];
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             double rX = -mY[i] * rx;
             double rY = mX[i] * rx;
             wX[i] = x + rX;
@@ -43,12 +51,11 @@ public class Kinematics {
             max = Math.max(max, wS[i]);
         }
 
-        //standard normalization
         if (max > 1.0) {
-            for (int i = 0; i < 4; i++) wS[i] /= max;
+            for (int i = 0; i < 3; i++) wS[i] /= max;
         }
 
-        for (int i = 0; i < 4; i++) {
+        for (int i = 0; i < 3; i++) {
             double speed = wS[i] < Constants.MODULE_DB ? 0.0 : wS[i];
             states[i] = new ModuleState(wA[i], speed);
         }

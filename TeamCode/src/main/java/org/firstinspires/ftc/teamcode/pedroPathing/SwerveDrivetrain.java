@@ -13,19 +13,18 @@ import org.firstinspires.ftc.teamcode.Swerve.Kinematics;
 import org.firstinspires.ftc.teamcode.Swerve.SwerveModule;
 import org.firstinspires.ftc.teamcode.Swerve.ModuleState;
 
-/**swerve drivetrain for pedro pathing*/
+/**swerve drivetrain for pedro pathing (3-wheeled)*/
 public class SwerveDrivetrain extends Drivetrain {
-    private final SwerveModule lf, rf, lb, rb;
+    private final SwerveModule l, r, b;
     private final VoltageSensor vSens;
     private final Kinematics kin;
-    private final double[] o = new double[8];
+    private final double[] o = new double[6];
     private double xV = 0, yV = 0;
 
     public SwerveDrivetrain(HardwareMap hw) {
-        lf = new SwerveModule(hw.get(DcMotorEx.class, Constants.LF_DRIVE), hw.get(CRServo.class, Constants.LF_STEER), hw.get(AnalogInput.class, Constants.LF_ENC), Constants.LF_DRIVE_REV, Constants.LF_STEER_REV, Constants.LF_OFF);
-        rf = new SwerveModule(hw.get(DcMotorEx.class, Constants.RF_DRIVE), hw.get(CRServo.class, Constants.RF_STEER), hw.get(AnalogInput.class, Constants.RF_ENC), Constants.RF_DRIVE_REV, Constants.RF_STEER_REV, Constants.RF_OFF);
-        lb = new SwerveModule(hw.get(DcMotorEx.class, Constants.LB_DRIVE), hw.get(CRServo.class, Constants.LB_STEER), hw.get(AnalogInput.class, Constants.LB_ENC), Constants.LB_DRIVE_REV, Constants.LB_STEER_REV, Constants.LB_OFF);
-        rb = new SwerveModule(hw.get(DcMotorEx.class, Constants.RB_DRIVE), hw.get(CRServo.class, Constants.RB_STEER), hw.get(AnalogInput.class, Constants.RB_ENC), Constants.RB_DRIVE_REV, Constants.RB_STEER_REV, Constants.RB_OFF);
+        l = new SwerveModule(hw.get(DcMotorEx.class, Constants.L_DRIVE), hw.get(CRServo.class, Constants.L_STEER), hw.get(AnalogInput.class, Constants.L_ENC), Constants.L_DRIVE_REV, Constants.L_STEER_REV, Constants.L_OFF, 0);
+        r = new SwerveModule(hw.get(DcMotorEx.class, Constants.R_DRIVE), hw.get(CRServo.class, Constants.R_STEER), hw.get(AnalogInput.class, Constants.R_ENC), Constants.R_DRIVE_REV, Constants.R_STEER_REV, Constants.R_OFF, 0);
+        b = new SwerveModule(hw.get(DcMotorEx.class, Constants.B_DRIVE), hw.get(CRServo.class, Constants.B_STEER), hw.get(AnalogInput.class, Constants.B_ENC), Constants.B_DRIVE_REV, Constants.B_STEER_REV, Constants.B_OFF, 0);
 
         kin = new Kinematics();
         vSens = hw.voltageSensor.iterator().next();
@@ -33,37 +32,34 @@ public class SwerveDrivetrain extends Drivetrain {
     }
 
     public void update() {
-        lf.update(); rf.update(); lb.update(); rb.update();
+        l.update(); r.update(); b.update();
     }
 
     @Override
     public double[] calculateDrive(Vector corr, Vector head, Vector cent, double h) {
-        //pedro x is fwd, y is lft. kin x is rgt, y is fwd.
         double f = corr.getXComponent() + cent.getXComponent();
-        double l = corr.getYComponent() + cent.getYComponent();
+        double lft = corr.getYComponent() + cent.getYComponent();
         double rx = head.getXComponent();
 
-        ModuleState[] s = kin.calculate(-l, f, rx);
+        ModuleState[] s = kin.calculate(-lft, f, rx);
         o[0] = s[0].angle; o[1] = s[0].speed;
         o[2] = s[1].angle; o[3] = s[1].speed;
         o[4] = s[2].angle; o[5] = s[2].speed;
-        o[6] = s[3].angle; o[7] = s[3].speed;
         return o;
     }
 
     @Override
     public void runDrive(double[] outputs) {
         update();
-        if (Math.abs(outputs[1]) + Math.abs(outputs[3]) + Math.abs(outputs[5]) + Math.abs(outputs[7]) < Constants.MODULE_DB) {
+        if (Math.abs(outputs[1]) + Math.abs(outputs[3]) + Math.abs(outputs[5]) < Constants.MODULE_DB) {
             stop(); return;
         }
-        lf.set(new ModuleState(outputs[0], outputs[1]));
-        rf.set(new ModuleState(outputs[2], outputs[3]));
-        lb.set(new ModuleState(outputs[4], outputs[5]));
-        rb.set(new ModuleState(outputs[6], outputs[7]));
+        l.set(new ModuleState(outputs[0], outputs[1]));
+        r.set(new ModuleState(outputs[2], outputs[3]));
+        b.set(new ModuleState(outputs[4], outputs[5]));
 
         double v = isVoltageCompensation() ? getNominalVoltage() / getVoltage() : 1.0;
-        lf.execute(v); rf.execute(v); lb.execute(v); rb.execute(v);
+        l.execute(v); r.execute(v); b.execute(v);
     }
 
     @Override public void updateConstants() {}
@@ -75,9 +71,9 @@ public class SwerveDrivetrain extends Drivetrain {
     @Override public void setXVelocity(double v) { xV = v; }
     @Override public void setYVelocity(double v) { yV = v; }
     @Override public double getVoltage() { return vSens.getVoltage(); }
-    @Override public String debugString() { return String.format("lf:%.1f rf:%.1f lb:%.1f rb:%.1f", lf.getCurA(), rf.getCurA(), lb.getCurA(), rb.getCurA()); }
+    @Override public String debugString() { return String.format("l:%.1f r:%.1f b:%.1f", l.getCurDeg(), r.getCurDeg(), b.getCurDeg()); }
 
     public void stop() {
-        lf.stop(); rf.stop(); lb.stop(); rb.stop();
+        l.stop(); r.stop(); b.stop();
     }
 }
