@@ -27,7 +27,8 @@ public class SwerveDrivetrain extends Drivetrain {
         b = new SwerveModule(hw.get(DcMotorEx.class, Constants.B_DRIVE), hw.get(CRServo.class, Constants.B_STEER), hw.get(AnalogInput.class, Constants.B_ENC), Constants.B_DRIVE_REV, Constants.B_STEER_REV, Constants.B_OFF, 0);
 
         kin = new Kinematics();
-        vSens = hw.voltageSensor.iterator().next();
+        java.util.Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
+        vSens = it.hasNext() ? it.next() : null;
         setNominalVoltage(Constants.NOMINAL_VOLTAGE);
     }
 
@@ -48,6 +49,7 @@ public class SwerveDrivetrain extends Drivetrain {
         return o;
     }
 
+
     @Override
     public void runDrive(double[] outputs) {
         update();
@@ -58,7 +60,7 @@ public class SwerveDrivetrain extends Drivetrain {
         r.set(new ModuleState(outputs[2], outputs[3]));
         b.set(new ModuleState(outputs[4], outputs[5]));
 
-        double v = isVoltageCompensation() ? getNominalVoltage() / getVoltage() : 1.0;
+        double v = isVoltageCompensation() ? getNominalVoltage() / Math.max(0.001, getVoltage()) : 1.0;
         l.execute(v); r.execute(v); b.execute(v);
     }
 
@@ -70,7 +72,7 @@ public class SwerveDrivetrain extends Drivetrain {
     @Override public double yVelocity() { return yV; }
     @Override public void setXVelocity(double v) { xV = v; }
     @Override public void setYVelocity(double v) { yV = v; }
-    @Override public double getVoltage() { return vSens.getVoltage(); }
+    @Override public double getVoltage() { return (vSens != null) ? vSens.getVoltage() : Constants.NOMINAL_VOLTAGE; }
     @Override public String debugString() { return String.format("l:%.1f r:%.1f b:%.1f", l.getCurDeg(), r.getCurDeg(), b.getCurDeg()); }
 
     public void stop() {

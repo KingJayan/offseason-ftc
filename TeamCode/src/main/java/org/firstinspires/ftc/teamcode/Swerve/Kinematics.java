@@ -29,7 +29,7 @@ public class Kinematics {
 
         double driveMag = Math.hypot(x, y);
         double rotMag = Math.abs(rx);
-        
+
         // prioritize rotation
         if (driveMag + rotMag > 1.0) {
             double scale = driveMag > 0 ? (1.0 - Math.min(1.0, rotMag)) / driveMag : 0;

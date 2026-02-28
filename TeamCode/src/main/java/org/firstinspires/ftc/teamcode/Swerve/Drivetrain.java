@@ -32,16 +32,22 @@ public class Drivetrain {
         kin = new Kinematics();
         imu = hw.get(IMU.class, Constants.IMU);
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(Constants.LOGO, Constants.USB)));
-        vSens = hw.voltageSensor.iterator().next();
+        //guard:use iterator safely and allow null if no volt data present
+        java.util.Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
+        vSens = it.hasNext() ? it.next() : null;
     }
 
     public void update() {
         l.update(); r.update(); b.update();
         
-        double v = vSens.getVoltage();
+        //guard:if no sensor available, use nominal voltage as fallback
+        double v = (vSens != null) ? vSens.getVoltage() : Constants.NOMINAL_VOLTAGE;
         vSum += v;
         vQ.add(v);
-        if (vQ.size() > Constants.VOLT_FILTER_N) vSum -= vQ.poll();
+        if (vQ.size() > Constants.VOLT_FILTER_N) {
+            Double p = vQ.poll();
+            if (p != null) vSum -= p;
+        }
     }
 
     public void defense() {
@@ -67,8 +73,9 @@ public class Drivetrain {
     }
 
     private void execute() {
-        double vAvg = vSum / Math.max(1, vQ.size());
-        double vComp = Constants.NOMINAL_VOLTAGE / vAvg;
+        //avoid division by zero or infinite compensation
+        double vAvg = !vQ.isEmpty() ? vSum / vQ.size() : Constants.NOMINAL_VOLTAGE;
+        double vComp = (vAvg <= 0 || Double.isInfinite(vAvg) || Double.isNaN(vAvg)) ? 1.0 : Constants.NOMINAL_VOLTAGE / vAvg;
         l.execute(vComp); r.execute(vComp); b.execute(vComp);
     }
 
@@ -78,5 +85,5 @@ public class Drivetrain {
     public SwerveModule getL() { return l; }
     public SwerveModule getR() { return r; }
     public SwerveModule getB() { return b; }
-    public double getV() { return vSens.getVoltage(); }
+    public double getV() { return (vSens != null) ? vSens.getVoltage() : Constants.NOMINAL_VOLTAGE; }
 }
