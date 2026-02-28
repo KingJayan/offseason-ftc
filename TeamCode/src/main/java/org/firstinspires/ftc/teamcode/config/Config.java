@@ -29,10 +29,8 @@ public class Config {
 
     //driver util
     public static boolean USE_MAG_SCALING = false;
-
     public static boolean USE_HEADING_HOLD = true;
     public static double PRECISION_SCALE = 0.4;
-
     public static double H_KP = 0.015;
     public static double H_KD = 0.002;
     
@@ -42,8 +40,8 @@ public class Config {
     
     //stall protection
     public static boolean USE_STALL_PROT = true;
-    public static double STALL_TIMEOUT = 0.4;//seconds
-    public static double STALL_THRESHOLD = 2;//degrees
+    public static double STALL_TIMEOUT = 0.7;//seconds (increased for axon speed)
+    public static double STALL_THRESHOLD = 2.0;//degrees
 
     /** apply deadband and curve to single value */
     public static double apply(double i, Mode m) {

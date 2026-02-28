@@ -80,13 +80,10 @@ public class SwerveModule {
     }
 
     public void set(ModuleState state) {
-        if (Math.abs(state.speed) < Constants.MODULE_DB) {
-            this.drivePct = 0;
-            return;
-        }
+        //allow angle updates even if speed is 0 for defense
         ModuleState opt = state.optimize(curDeg);
         this.tgtDeg = opt.angle;
-        this.drivePct = opt.speed;
+        this.drivePct = Math.abs(state.speed) < Constants.MODULE_DB ? 0 : opt.speed;
     }
 
     /**pid loop*/
@@ -98,13 +95,15 @@ public class SwerveModule {
         lastDeg = curDeg;
 
         double sPwr = 0;
-        if (Math.abs(errDeg) > Constants.STEER_JITTER_DEG || Math.abs(drivePct) > 0) {
-            if (Math.abs(errDeg) > Constants.TOLERANCE && !stalled) {
-                sPwr = Constants.KP * errDeg - Constants.KD * dDegSec;
-                sPwr += Math.signum(sPwr) * Constants.KSTATIC;
-                sPwr = Math.max(-1.0, Math.min(1.0, sPwr));
-            }
+        if (Math.abs(errDeg) > Constants.TOLERANCE && !stalled) {
+            sPwr = Constants.KP * errDeg - Constants.KD * dDegSec;
+            sPwr += Math.signum(sPwr) * Constants.KSTATIC;
+            sPwr = Math.max(-1.0, Math.min(1.0, sPwr));
         }
+        
+        // suppression if parked and aligned
+        if (Math.abs(drivePct) < 0.01 && Math.abs(errDeg) < Constants.STEER_JITTER_DEG) sPwr = 0;
+
         steer.setPower(sRev ? -sPwr : sPwr);
 
         double outPct = (dRev ? -drivePct : drivePct) * vComp;

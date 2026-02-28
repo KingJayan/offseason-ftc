@@ -41,7 +41,7 @@ public class SwervePDTuner extends OpMode {
         double err = MathUtil.wrap(tgtH - curH);
         double dtSec = timer.seconds();
         timer.reset();
-        
+
         double d = dtSec > 0 ? (err - lastErr) / dtSec : 0;
         lastErr = err;
         

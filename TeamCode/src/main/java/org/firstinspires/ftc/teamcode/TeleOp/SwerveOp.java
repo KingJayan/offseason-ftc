@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.config.Config;
+import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.Swerve.Drivetrain;
 import org.firstinspires.ftc.teamcode.helpers.util.RateLimiter;
 import org.firstinspires.ftc.teamcode.helpers.util.MathUtil;
@@ -47,7 +48,7 @@ public class SwerveOp extends OpMode {
 
         double lx = gamepad1.left_stick_x;
         double ly = -gamepad1.left_stick_y;
-        double rx = gamepad1.right_stick_x;
+        double rRaw = gamepad1.right_stick_x;
 
         if (modeToggle.update(gamepad1.ps)) {
             mode = (mode == DriveMode.ROBOT) ? DriveMode.FIELD : DriveMode.ROBOT;
@@ -60,6 +61,7 @@ public class SwerveOp extends OpMode {
             wasDefense = true;
             return;
         } else if (wasDefense) {
+            dt.drive(0, 0, 0, mode == DriveMode.FIELD);
             wasDefense = false;
         }
 
@@ -74,6 +76,8 @@ public class SwerveOp extends OpMode {
             y = Config.apply(ly, Config.T_MODE);
         }
 
+        double rx = Config.apply(rRaw, Config.R_MODE);
+
         if (gamepad1.left_bumper || gamepad1.right_bumper) {
             x *= Config.PRECISION_SCALE;
             y *= Config.PRECISION_SCALE;
@@ -81,7 +85,7 @@ public class SwerveOp extends OpMode {
         }
 
         double curH = dt.getHeading();
-        boolean stickMoving = Math.abs(rx) > 0.05;
+        boolean stickMoving = Math.abs(rRaw) > Constants.STICK_DB;
 
         if (gamepad1.dpad_up) { tgtH = 0; hLock = true; gamepad1.rumble(100); }
         else if (gamepad1.dpad_left) { tgtH = 90; hLock = true; gamepad1.rumble(100); }
@@ -89,25 +93,20 @@ public class SwerveOp extends OpMode {
         else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; gamepad1.rumble(100); }
 
         if (Config.USE_PASSIVE_ALIGN && !stickMoving && !hLock) {
-            double[] cardinals = {0, 90, 180, -90};
-            for (double c : cardinals) {
+            double[] cards = {0, 90, 180, -90};
+            for (double c : cards) {
                 if (Math.abs(MathUtil.wrap(c - curH)) < Config.PASSIVE_ALIGN_DEG) {
-                    tgtH = c;
-                    hLock = true;
-                    gamepad1.rumble(100);
-                    break;
+                    tgtH = c; hLock = true;
+                    gamepad1.rumble(100); break;
                 }
             }
         }
 
         if (Config.USE_HEADING_HOLD) {
             if (stickMoving) {
-                hLock = false;
-                lastRXNeutral = false;
+                hLock = false; lastRXNeutral = false;
             } else if (!lastRXNeutral) {
-                tgtH = curH;
-                hLock = true;
-                lastRXNeutral = true;
+                tgtH = curH; hLock = true; lastRXNeutral = true;
             }
         } else if (stickMoving) {
             hLock = false;
@@ -132,7 +131,7 @@ public class SwerveOp extends OpMode {
             rx = rR.calculate(rx);
         }
 
-        dt.drive(x, y, rx, mode != DriveMode.ROBOT);
+        dt.drive(x, y, rx, mode == DriveMode.FIELD);
 
         telemetry.addData("mode", mode);
         telemetry.addData("h", "%.1f", curH);

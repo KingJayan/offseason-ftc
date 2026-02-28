@@ -42,7 +42,8 @@ public class Constants {
             RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD;
 
     //dims
-    public static double ROBOT_RADIUS = 0.2; //dist from center to wheel (meters)
+    public static double ROBOT_RADIUS = 0.2; //dist center to wheel (meters)
+    public static double ROT_SCALER = 4.0; //rotation sensitivity multiplier
 
     //steer pid
     public static double KP = 0.02;

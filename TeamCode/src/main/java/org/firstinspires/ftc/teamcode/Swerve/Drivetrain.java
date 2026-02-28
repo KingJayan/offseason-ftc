@@ -20,7 +20,7 @@ public class Drivetrain {
     private final IMU imu;
     private final VoltageSensor vSens;
     private final Kinematics kin;
-    
+
     private final Queue<Double> vQ = new LinkedList<>();
     private double vSum = 0;
 

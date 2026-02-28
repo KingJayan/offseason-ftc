@@ -10,26 +10,29 @@ public class Kinematics {
     public Kinematics() {
         double r = Constants.ROBOT_RADIUS;
         // left: 60 deg, right: -60 deg, back: 180 deg
-        // x: right, y: forward
         mX = new double[] {
-            r * Math.sin(Math.toRadians(60)),  // left
-            r * Math.sin(Math.toRadians(-60)), // right
-            r * Math.sin(Math.toRadians(180))  // back
+            r * Math.sin(Math.toRadians(60)),
+            r * Math.sin(Math.toRadians(-60)),
+            r * Math.sin(Math.toRadians(180))
         };
         mY = new double[] {
-            r * Math.cos(Math.toRadians(60)),  // left
-            r * Math.cos(Math.toRadians(-60)), // right
-            r * Math.cos(Math.toRadians(180))  // back
+            r * Math.cos(Math.toRadians(60)),
+            r * Math.cos(Math.toRadians(-60)),
+            r * Math.cos(Math.toRadians(180))
         };
     }
 
     /**calc states from velocities*/
     public ModuleState[] calculate(double x, double y, double rx) {
+        //
+        rx *= Constants.ROT_SCALER;
+
         double driveMag = Math.hypot(x, y);
         double rotMag = Math.abs(rx);
         
+        // prioritize rotation
         if (driveMag + rotMag > 1.0) {
-            double scale = (1.0 - rotMag) / driveMag;
+            double scale = driveMag > 0 ? (1.0 - Math.min(1.0, rotMag)) / driveMag : 0;
             x *= scale;
             y *= scale;
         }
