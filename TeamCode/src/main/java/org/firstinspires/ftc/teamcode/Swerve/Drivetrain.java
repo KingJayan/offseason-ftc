@@ -10,9 +10,9 @@ import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.config.Constants;
+import org.firstinspires.ftc.teamcode.helpers.util.VComp;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Iterator;
 
 /**swerve drivetrain controller for 3-wheeled layout*/
 public class Drivetrain {
@@ -20,9 +20,7 @@ public class Drivetrain {
     private final IMU imu;
     private final VoltageSensor vSens;
     private final Kinematics kin;
-
-    private final Queue<Double> vQ = new LinkedList<>();
-    private double vSum = 0;
+    private final VComp vCompFilter = new VComp();
 
     public Drivetrain(HardwareMap hw) {
         l = new SwerveModule(hw.get(DcMotorEx.class, Constants.L_DRIVE), hw.get(CRServo.class, Constants.L_STEER), hw.get(AnalogInput.class, Constants.L_ENC), Constants.L_DRIVE_REV, Constants.L_STEER_REV, Constants.L_OFF, 0);
@@ -32,26 +30,15 @@ public class Drivetrain {
         kin = new Kinematics();
         imu = hw.get(IMU.class, Constants.IMU);
         imu.initialize(new IMU.Parameters(new RevHubOrientationOnRobot(Constants.LOGO, Constants.USB)));
-        //guard:use iterator safely and allow null if no volt data present
-        java.util.Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
+        Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
         vSens = it.hasNext() ? it.next() : null;
     }
 
     public void update() {
         l.update(); r.update(); b.update();
-        
-        //guard:if no sensor available, use nominal voltage as fallback
-        double v = (vSens != null) ? vSens.getVoltage() : Constants.NOMINAL_VOLTAGE;
-        vSum += v;
-        vQ.add(v);
-        if (vQ.size() > Constants.VOLT_FILTER_N) {
-            Double p = vQ.poll();
-            if (p != null) vSum -= p;
-        }
     }
 
     public void defense() {
-        //triangular kiwi lock pattern
         l.set(new ModuleState(150, 0));
         r.set(new ModuleState(-150, 0));
         b.set(new ModuleState(-90, 0));
@@ -73,10 +60,9 @@ public class Drivetrain {
     }
 
     private void execute() {
-        //avoid division by zero or infinite compensation
-        double vAvg = !vQ.isEmpty() ? vSum / vQ.size() : Constants.NOMINAL_VOLTAGE;
-        double vComp = (vAvg <= 0 || Double.isInfinite(vAvg) || Double.isNaN(vAvg)) ? 1.0 : Constants.NOMINAL_VOLTAGE / vAvg;
-        l.execute(vComp); r.execute(vComp); b.execute(vComp);
+        double v = (vSens != null) ? vSens.getVoltage() : Constants.NOMINAL_VOLTAGE;
+        double comp = vCompFilter.get(v);
+        l.execute(comp); r.execute(comp); b.execute(comp);
     }
 
     public double getHeading() { return imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.DEGREES); }

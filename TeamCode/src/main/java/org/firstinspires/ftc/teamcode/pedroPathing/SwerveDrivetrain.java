@@ -12,12 +12,16 @@ import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.Swerve.Kinematics;
 import org.firstinspires.ftc.teamcode.Swerve.SwerveModule;
 import org.firstinspires.ftc.teamcode.Swerve.ModuleState;
+import org.firstinspires.ftc.teamcode.helpers.util.VComp;
+
+import java.util.Iterator;
 
 /**swerve drivetrain for pedro pathing (3-wheeled)*/
 public class SwerveDrivetrain extends Drivetrain {
     private final SwerveModule l, r, b;
     private final VoltageSensor vSens;
     private final Kinematics kin;
+    private final VComp vCompFilter = new VComp();
     private final double[] o = new double[6];
     private double xV = 0, yV = 0;
 
@@ -27,7 +31,7 @@ public class SwerveDrivetrain extends Drivetrain {
         b = new SwerveModule(hw.get(DcMotorEx.class, Constants.B_DRIVE), hw.get(CRServo.class, Constants.B_STEER), hw.get(AnalogInput.class, Constants.B_ENC), Constants.B_DRIVE_REV, Constants.B_STEER_REV, Constants.B_OFF, 0);
 
         kin = new Kinematics();
-        java.util.Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
+        Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
         vSens = it.hasNext() ? it.next() : null;
         setNominalVoltage(Constants.NOMINAL_VOLTAGE);
     }
@@ -60,8 +64,9 @@ public class SwerveDrivetrain extends Drivetrain {
         r.set(new ModuleState(outputs[2], outputs[3]));
         b.set(new ModuleState(outputs[4], outputs[5]));
 
-        double v = isVoltageCompensation() ? getNominalVoltage() / Math.max(0.001, getVoltage()) : 1.0;
-        l.execute(v); r.execute(v); b.execute(v);
+        double v = (vSens != null) ? vSens.getVoltage() : Constants.NOMINAL_VOLTAGE;
+        double comp = isVoltageCompensation() ? vCompFilter.get(v) : 1.0;
+        l.execute(comp); r.execute(comp); b.execute(comp);
     }
 
     @Override public void updateConstants() {}
