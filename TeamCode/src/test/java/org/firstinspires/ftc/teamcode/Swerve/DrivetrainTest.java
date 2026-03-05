@@ -9,11 +9,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.qualcomm.robotcore.hardware.AnalogInput;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -27,8 +26,7 @@ import java.util.Iterator;
 public class DrivetrainTest {
     private HardwareMap hw;
     private DcMotorEx drv;
-    private CRServo str;
-    private AnalogInput enc;
+    private Servo str;
     private IMU imu;
     private VoltageSensor vs;
     private Drivetrain dt;
@@ -37,15 +35,13 @@ public class DrivetrainTest {
     @SuppressWarnings("unchecked")
     public void setup() {
         drv = mock(DcMotorEx.class);
-        str = mock(CRServo.class);
-        enc = mock(AnalogInput.class);
+        str = mock(Servo.class);
         imu = mock(IMU.class);
         vs = mock(VoltageSensor.class);
         hw = mock(HardwareMap.class);
 
         when(hw.get(eq(DcMotorEx.class), anyString())).thenReturn(drv);
-        when(hw.get(eq(CRServo.class), anyString())).thenReturn(str);
-        when(hw.get(eq(AnalogInput.class), anyString())).thenReturn(enc);
+        when(hw.get(eq(Servo.class), anyString())).thenReturn(str);
         when(hw.get(eq(IMU.class), anyString())).thenReturn(imu);
 
         HardwareMap.DeviceMapping<VoltageSensor> vMap = mock(HardwareMap.DeviceMapping.class);
@@ -63,28 +59,27 @@ public class DrivetrainTest {
     @Test
     public void testDefense() {
         dt.defense();
-        //now checks for 3 interactions
-        verify(str, times(3)).setPower(anyDouble());
+        verify(str, times(3)).setPosition(anyDouble());
+        verify(drv, times(3)).setPower(anyDouble());
     }
 
     @Test
     public void testStop() {
         dt.stop();
         verify(drv, times(3)).setPower(0.0);
-        verify(str, times(3)).setPower(0.0);
     }
 
     @Test
     public void testUpdate() {
         dt.update();
-        verify(enc, times(3)).getVoltage();
+        verifyNoMotorPower();
     }
 
     @Test
     public void testDriveRobCentric() {
         dt.drive(0.5, 0.5, 0.0, false);
         verify(drv, times(3)).setPower(anyDouble());
-        verify(str, times(3)).setPower(anyDouble());
+        verify(str, times(3)).setPosition(anyDouble());
     }
 
     @Test
@@ -92,11 +87,16 @@ public class DrivetrainTest {
         dt.drive(0.5, 0.0, 0.0, true);
         verify(imu, times(1)).getRobotYawPitchRollAngles();
         verify(drv, times(3)).setPower(anyDouble());
+        verify(str, times(3)).setPosition(anyDouble());
     }
 
     @Test
     public void testResetYaw() {
         dt.resetYaw();
         verify(imu, times(1)).resetYaw();
+    }
+
+    private void verifyNoMotorPower() {
+        verify(drv, times(0)).setPower(anyDouble());
     }
 }

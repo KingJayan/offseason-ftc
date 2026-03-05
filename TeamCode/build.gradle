@@ -80,9 +80,16 @@ dependencies {
 
     //implementation("dev.frozenmilk.sinister:Sloth:0.2.4")
     //implementation("com.acmerobotics.slothboard:dashboard:0.2.4+0.5.1") switched to panels
-    implementation("com.bylazar.sloth:fullpanels:0.2.4+1.0.12")
+    implementation("com.bylazar.sloth:fullpanels:0.2.4+1.0.12") {
+        exclude group: "com.bylazar", module: "battery"
+        exclude group: "com.bylazar", module: "camerastream"
+        exclude group: "com.bylazar", module: "capture"
+        exclude group: "com.bylazar", module: "configurables"
+        exclude group: "com.bylazar", module: "field"
+        exclude group: "com.bylazar", module: "telemetry"
+    }
 
-    //unit testing junit + mockito
+    //junit testing junit + mockito
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.10.2'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.2'
 

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.Swerve.Drivetrain;
 import org.firstinspires.ftc.teamcode.Swerve.SwerveModule;
 import org.firstinspires.ftc.teamcode.Swerve.ModuleState;
+import org.firstinspires.ftc.teamcode.config.Constants;
 
 /**verifies 3-wheeled hardware orientation*/
 @TeleOp(name="swerve debug")
@@ -38,7 +39,10 @@ public class SwerveDebugOp extends OpMode {
             dt.getB().set(new ModuleState(0, p));
         }
 
-        dt.drive(0,0,0,false);
+        double comp = Constants.NOMINAL_VOLTAGE / Math.max(1e-6, dt.getV());
+        dt.getL().execute(comp);
+        dt.getR().execute(comp);
+        dt.getB().execute(comp);
 
         telemetry.addData("h", "%.1f", dt.getHeading());
         addMod("l", dt.getL()); addMod("r", dt.getR()); addMod("b", dt.getB());

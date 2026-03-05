@@ -18,6 +18,11 @@ public class SwerveOp extends OpMode {
     private DriveMode mode = DriveMode.FIELD;
     
     private final Toggle modeToggle = new Toggle();
+    private final Toggle snapUpToggle = new Toggle();
+    private final Toggle snapLeftToggle = new Toggle();
+    private final Toggle snapDownToggle = new Toggle();
+    private final Toggle snapRightToggle = new Toggle();
+    private final Toggle yawResetToggle = new Toggle();
     private final RateLimiter rX = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
     private final RateLimiter rY = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
     private final RateLimiter rR = new RateLimiter(Config.R_ACCEL, Config.R_DECEL);
@@ -25,6 +30,8 @@ public class SwerveOp extends OpMode {
     private double tgtH = 0;
     private boolean hLock = false;
     private double lastHErr = 0;
+    private double lastD = 0;
+    private double errIntegral = 0;
     private boolean lastRXNeutral = true;
     private boolean wasDefense = false;
     private final ElapsedTime hTimer = new ElapsedTime();
@@ -50,7 +57,7 @@ public class SwerveOp extends OpMode {
         double ly = -gamepad1.left_stick_y;
         double rRaw = gamepad1.right_stick_x;
 
-        if (modeToggle.update(gamepad1.ps)) {
+        if (modeToggle.momentary(gamepad1.ps)) {
             mode = (mode == DriveMode.ROBOT) ? DriveMode.FIELD : DriveMode.ROBOT;
             gamepad1.rumble(150);
         }
@@ -87,16 +94,16 @@ public class SwerveOp extends OpMode {
         double curH = dt.getHeading();
         boolean stickMoving = Math.abs(rRaw) > Constants.STICK_DB;
 
-        if (gamepad1.dpad_up) { tgtH = 0; hLock = true; gamepad1.rumble(100); }
-        else if (gamepad1.dpad_left) { tgtH = 90; hLock = true; gamepad1.rumble(100); }
-        else if (gamepad1.dpad_down) { tgtH = 180; hLock = true; gamepad1.rumble(100); }
-        else if (gamepad1.dpad_right) { tgtH = -90; hLock = true; gamepad1.rumble(100); }
+        if (snapUpToggle.momentary(gamepad1.dpad_up)) { tgtH = 0; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
+        else if (snapLeftToggle.momentary(gamepad1.dpad_left)) { tgtH = 90; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
+        else if (snapDownToggle.momentary(gamepad1.dpad_down)) { tgtH = 180; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
+        else if (snapRightToggle.momentary(gamepad1.dpad_right)) { tgtH = -90; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
 
         if (Config.USE_PASSIVE_ALIGN && !stickMoving && !hLock) {
             double[] cards = {0, 90, 180, -90};
             for (double c : cards) {
                 if (Math.abs(MathUtil.wrap(c - curH)) < Config.PASSIVE_ALIGN_DEG) {
-                    tgtH = c; hLock = true;
+                    tgtH = c; hLock = true; lastD = 0; errIntegral = 0;
                     gamepad1.rumble(100); break;
                 }
             }
@@ -106,7 +113,7 @@ public class SwerveOp extends OpMode {
             if (stickMoving) {
                 hLock = false; lastRXNeutral = false;
             } else if (!lastRXNeutral) {
-                tgtH = curH; hLock = true; lastRXNeutral = true;
+                tgtH = curH; hLock = true; lastD = 0; errIntegral = 0; lastRXNeutral = true;
             }
         } else if (stickMoving) {
             hLock = false;
@@ -115,12 +122,18 @@ public class SwerveOp extends OpMode {
         if (hLock) {
             double dtH = hTimer.seconds(); hTimer.reset();
             double err = MathUtil.wrap(tgtH - curH);
-            double d = dtH > 0 ? (err - lastHErr) / dtH : 0;
+            double rawD = dtH > 0 ? (err - lastHErr) / dtH : 0;
+            double d = Config.alpha * rawD + (1 - Config.alpha) * lastD;
+            lastD = d;
             lastHErr = err;
-            rx = (err * Config.H_KP) + (d * Config.H_KD);
+
+            errIntegral += err * dtH;
+            errIntegral = Math.max(-1.0, Math.min(1.0, errIntegral));
+
+            rx = (err * Config.H_KP) + (errIntegral * Config.H_KI) + (d * Config.H_KD);
         }
 
-        if (gamepad1.x) {
+        if (yawResetToggle.momentary(gamepad1.x)) {
             dt.resetYaw();
             gamepad1.rumble(200);
         }
