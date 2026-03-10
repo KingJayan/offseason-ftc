@@ -2,9 +2,10 @@ package org.firstinspires.ftc.teamcode.pedroPathing;
 
 import com.pedropathing.Drivetrain;
 import com.pedropathing.math.Vector;
+import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
 import org.firstinspires.ftc.teamcode.config.Constants;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.Swerve.ModuleState;
 import org.firstinspires.ftc.teamcode.helpers.util.VComp;
 
 import java.util.Iterator;
+import java.util.Locale;
 
 /**swerve drivetrain for pedro pathing*/
 public class SwerveDrivetrain extends Drivetrain {
@@ -25,9 +27,30 @@ public class SwerveDrivetrain extends Drivetrain {
     private double xV = 0, yV = 0;
 
     public SwerveDrivetrain(HardwareMap hw) {
-        l = new SwerveModule(hw.get(DcMotorEx.class, Constants.L_DRIVE), hw.get(Servo.class, Constants.L_STEER), Constants.L_DRIVE_REV, Constants.L_STEER_REV, Constants.L_OFF_DEG);
-        r = new SwerveModule(hw.get(DcMotorEx.class, Constants.R_DRIVE), hw.get(Servo.class, Constants.R_STEER), Constants.R_DRIVE_REV, Constants.R_STEER_REV, Constants.R_OFF_DEG);
-        b = new SwerveModule(hw.get(DcMotorEx.class, Constants.B_DRIVE), hw.get(Servo.class, Constants.B_STEER), Constants.B_DRIVE_REV, Constants.B_STEER_REV, Constants.B_OFF_DEG);
+        l = new SwerveModule(
+                hw.get(DcMotorEx.class, Constants.L_DRIVE),
+                hw.get(CRServo.class, Constants.L_STEER),
+                hw.get(AnalogInput.class, Constants.L_STEER_ENC),
+                Constants.L_DRIVE_REV,
+                Constants.L_STEER_REV,
+                Constants.L_OFF_DEG
+        );
+        r = new SwerveModule(
+                hw.get(DcMotorEx.class, Constants.R_DRIVE),
+                hw.get(CRServo.class, Constants.R_STEER),
+                hw.get(AnalogInput.class, Constants.R_STEER_ENC),
+                Constants.R_DRIVE_REV,
+                Constants.R_STEER_REV,
+                Constants.R_OFF_DEG
+        );
+        b = new SwerveModule(
+                hw.get(DcMotorEx.class, Constants.B_DRIVE),
+                hw.get(CRServo.class, Constants.B_STEER),
+                hw.get(AnalogInput.class, Constants.B_STEER_ENC),
+                Constants.B_DRIVE_REV,
+                Constants.B_STEER_REV,
+                Constants.B_OFF_DEG
+        );
 
         kin = new Kinematics();
         Iterator<VoltageSensor> it = hw.voltageSensor.iterator();
@@ -75,7 +98,7 @@ public class SwerveDrivetrain extends Drivetrain {
     @Override public void setXVelocity(double v) { xV = v; }
     @Override public void setYVelocity(double v) { yV = v; }
     @Override public double getVoltage() { return (vs != null) ? vs.getVoltage() : Constants.NOMINAL_VOLTAGE; }
-    @Override public String debugString() { return String.format("l:%.1f r:%.1f b:%.1f", l.getCurDeg(), r.getCurDeg(), b.getCurDeg()); }
+    @Override public String debugString() { return String.format(Locale.US, "l:%.1f r:%.1f b:%.1f", l.getCurDeg(), r.getCurDeg(), b.getCurDeg()); }
 
     public void stop() {
         l.stop(); r.stop(); b.stop();

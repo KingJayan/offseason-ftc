@@ -6,18 +6,23 @@ import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 @Configurable
 public class Constants {
     //drive motors
-    public static String L_DRIVE = "leftDrive";
-    public static String R_DRIVE = "rightDrive";
-    public static String B_DRIVE = "backDrive";
+    public static String L_DRIVE = "lDrive";
+    public static String R_DRIVE = "rDrive";
+    public static String B_DRIVE = "bDrive";
 
     //steering servos
-    public static String L_STEER = "leftSteer";
-    public static String R_STEER = "rightSteer";
-    public static String B_STEER = "backSteer";
+    public static String L_STEER = "lSteer";
+    public static String R_STEER = "rSteer";
+    public static String B_STEER = "bSteer";
+
+    //steering analog feedback
+    public static String L_STEER_ENC = "lSteerEnc";
+    public static String R_STEER_ENC = "rSteerEnc";
+    public static String B_STEER_ENC = "bSteerEnc";
 
     public static String IMU = "imu";
 
-    //motor directions
+    //motor directions (true = reversed)
     public static boolean L_DRIVE_REV = false;
     public static boolean R_DRIVE_REV = false;
     public static boolean B_DRIVE_REV = false;
@@ -51,6 +56,11 @@ public class Constants {
     public static double MODULE_DB = 0.01;
     public static double STEER_JITTER_DEG = 0.5;
     public static double TOLERANCE_DEG = 2.0;
+
+    //steer crservo control
+    public static double STEER_ANALOG_MAX_V = 3.3;
+    public static double STEER_KP = 0.012;
+    public static double STEER_MAX_PWR = 0.85;
 
     //servo config
     public static double GEAR_RATIO = 3.2;

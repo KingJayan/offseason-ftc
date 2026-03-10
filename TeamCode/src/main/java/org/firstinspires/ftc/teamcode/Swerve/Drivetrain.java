@@ -1,10 +1,11 @@
 package org.firstinspires.ftc.teamcode.Swerve;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.AnalogInput;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.teamcode.config.Constants;
@@ -20,9 +21,30 @@ public class Drivetrain {
     private final VComp filter = new VComp();
 
     public Drivetrain(HardwareMap hw) {
-        l = new SwerveModule(hw.get(DcMotorEx.class, Constants.L_DRIVE), hw.get(Servo.class, Constants.L_STEER), Constants.L_DRIVE_REV, Constants.L_STEER_REV, Constants.L_OFF_DEG);
-        r = new SwerveModule(hw.get(DcMotorEx.class, Constants.R_DRIVE), hw.get(Servo.class, Constants.R_STEER), Constants.R_DRIVE_REV, Constants.R_STEER_REV, Constants.R_OFF_DEG);
-        b = new SwerveModule(hw.get(DcMotorEx.class, Constants.B_DRIVE), hw.get(Servo.class, Constants.B_STEER), Constants.B_DRIVE_REV, Constants.B_STEER_REV, Constants.B_OFF_DEG);
+        l = new SwerveModule(
+                hw.get(DcMotorEx.class, Constants.L_DRIVE),
+                hw.get(CRServo.class, Constants.L_STEER),
+                hw.get(AnalogInput.class, Constants.L_STEER_ENC),
+                Constants.L_DRIVE_REV,
+                Constants.L_STEER_REV,
+                Constants.L_OFF_DEG
+        );
+        r = new SwerveModule(
+                hw.get(DcMotorEx.class, Constants.R_DRIVE),
+                hw.get(CRServo.class, Constants.R_STEER),
+                hw.get(AnalogInput.class, Constants.R_STEER_ENC),
+                Constants.R_DRIVE_REV,
+                Constants.R_STEER_REV,
+                Constants.R_OFF_DEG
+        );
+        b = new SwerveModule(
+                hw.get(DcMotorEx.class, Constants.B_DRIVE),
+                hw.get(CRServo.class, Constants.B_STEER),
+                hw.get(AnalogInput.class, Constants.B_STEER_ENC),
+                Constants.B_DRIVE_REV,
+                Constants.B_STEER_REV,
+                Constants.B_OFF_DEG
+        );
 
         kin = new Kinematics();
         imu = hw.get(IMU.class, Constants.IMU);

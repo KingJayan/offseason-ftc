@@ -8,6 +8,7 @@ import org.firstinspires.ftc.teamcode.config.Config;
 import org.firstinspires.ftc.teamcode.config.Constants;
 import org.firstinspires.ftc.teamcode.Swerve.Drivetrain;
 import org.firstinspires.ftc.teamcode.helpers.util.RateLimiter;
+import org.firstinspires.ftc.teamcode.helpers.util.HeadingController;
 import org.firstinspires.ftc.teamcode.helpers.util.MathUtil;
 import org.firstinspires.ftc.teamcode.helpers.Toggle;
 
@@ -27,20 +28,24 @@ public class SwerveOp extends OpMode {
     private final RateLimiter rY = new RateLimiter(Config.D_ACCEL, Config.D_DECEL);
     private final RateLimiter rR = new RateLimiter(Config.R_ACCEL, Config.R_DECEL);
 
-    private double tgtH = 0;
+    private final HeadingController headingController = new HeadingController();
     private boolean hLock = false;
-    private double lastHErr = 0;
-    private double lastD = 0;
-    private double errIntegral = 0;
     private boolean lastRXNeutral = true;
     private boolean wasDefense = false;
     private final ElapsedTime hTimer = new ElapsedTime();
+    private double lastModeToggleAt = -10.0;
+    private double lastSnapAt = -10.0;
+    private double lastYawResetAt = -10.0;
+
+    private double tgtH = 0;
 
     @Override
     public void init() {
         dt = new Drivetrain(hardwareMap);
         dt.resetYaw();
         tgtH = dt.getHeading();
+        headingController.setTarget(tgtH, tgtH);
+        hTimer.reset();
     }
 
     @Override
@@ -57,7 +62,8 @@ public class SwerveOp extends OpMode {
         double ly = -gamepad1.left_stick_y;
         double rRaw = gamepad1.right_stick_x;
 
-        if (modeToggle.momentary(gamepad1.ps)) {
+        if (modeToggle.momentary(gamepad1.ps) && (getRuntime() - lastModeToggleAt) >= Config.MODE_TOGGLE_DB_SEC) {
+            lastModeToggleAt = getRuntime();
             mode = (mode == DriveMode.ROBOT) ? DriveMode.FIELD : DriveMode.ROBOT;
             gamepad1.rumble(150);
         }
@@ -94,47 +100,93 @@ public class SwerveOp extends OpMode {
         double curH = dt.getHeading();
         boolean stickMoving = Math.abs(rRaw) > Constants.STICK_DB;
 
-        if (snapUpToggle.momentary(gamepad1.dpad_up)) { tgtH = 0; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
-        else if (snapLeftToggle.momentary(gamepad1.dpad_left)) { tgtH = 90; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
-        else if (snapDownToggle.momentary(gamepad1.dpad_down)) { tgtH = 180; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
-        else if (snapRightToggle.momentary(gamepad1.dpad_right)) { tgtH = -90; hLock = true; lastD = 0; errIntegral = 0; gamepad1.rumble(100); }
+        if (snapUpToggle.momentary(gamepad1.dpad_up) && (getRuntime() - lastSnapAt) >= Config.SNAP_DB_SEC) {
+            lastSnapAt = getRuntime();
+            tgtH = 0;
+            hLock = true;
+            headingController.setTarget(tgtH, curH);
+            hTimer.reset();
+            gamepad1.rumble(100);
+        }
+        else if (snapLeftToggle.momentary(gamepad1.dpad_left) && (getRuntime() - lastSnapAt) >= Config.SNAP_DB_SEC) {
+            lastSnapAt = getRuntime();
+            tgtH = 90;
+            hLock = true;
+            headingController.setTarget(tgtH, curH);
+            hTimer.reset();
+            gamepad1.rumble(100);
+        }
+        else if (snapDownToggle.momentary(gamepad1.dpad_down) && (getRuntime() - lastSnapAt) >= Config.SNAP_DB_SEC) {
+            lastSnapAt = getRuntime();
+            tgtH = 180;
+            hLock = true;
+            headingController.setTarget(tgtH, curH);
+            hTimer.reset();
+            gamepad1.rumble(100);
+        }
+        else if (snapRightToggle.momentary(gamepad1.dpad_right) && (getRuntime() - lastSnapAt) >= Config.SNAP_DB_SEC) {
+            lastSnapAt = getRuntime();
+            tgtH = -90;
+            hLock = true;
+            headingController.setTarget(tgtH, curH);
+            hTimer.reset();
+            gamepad1.rumble(100);
+        }
 
         if (Config.USE_PASSIVE_ALIGN && !stickMoving && !hLock) {
             double[] cards = {0, 90, 180, -90};
             for (double c : cards) {
                 if (Math.abs(MathUtil.wrap(c - curH)) < Config.PASSIVE_ALIGN_DEG) {
-                    tgtH = c; hLock = true; lastD = 0; errIntegral = 0;
-                    gamepad1.rumble(100); break;
+                    tgtH = c;
+                    hLock = true;
+                    headingController.setTarget(tgtH, curH);
+                    hTimer.reset();
+                    gamepad1.rumble(100);
+                    break;
                 }
             }
         }
 
         if (Config.USE_HEADING_HOLD) {
             if (stickMoving) {
-                hLock = false; lastRXNeutral = false;
+                hLock = false;
+                lastRXNeutral = false;
             } else if (!lastRXNeutral) {
-                tgtH = curH; hLock = true; lastD = 0; errIntegral = 0; lastRXNeutral = true;
+                tgtH = curH;
+                hLock = true;
+                headingController.setTarget(tgtH, curH);
+                hTimer.reset();
+                lastRXNeutral = true;
             }
         } else if (stickMoving) {
             hLock = false;
         }
 
         if (hLock) {
-            double dtH = hTimer.seconds(); hTimer.reset();
-            double err = MathUtil.wrap(tgtH - curH);
-            double rawD = dtH > 0 ? (err - lastHErr) / dtH : 0;
-            double d = Config.alpha * rawD + (1 - Config.alpha) * lastD;
-            lastD = d;
-            lastHErr = err;
-
-            errIntegral += err * dtH;
-            errIntegral = Math.max(-1.0, Math.min(1.0, errIntegral));
-
-            rx = (err * Config.H_KP) + (errIntegral * Config.H_KI) + (d * Config.H_KD);
+            double dtH = hTimer.seconds();
+            hTimer.reset();
+            rx = headingController.calculate(
+                    curH,
+                    dtH,
+                    Config.H_KP,
+                    Config.H_KI,
+                    Config.H_KD,
+                    Config.alpha,
+                    Config.H_I_ZONE_DEG,
+                    Config.H_I_MAX,
+                    Config.H_I_LEAK_PER_SEC,
+                    Config.H_OUT_MAX
+            );
+        } else {
+            hTimer.reset();
         }
 
-        if (yawResetToggle.momentary(gamepad1.x)) {
+        if (yawResetToggle.momentary(gamepad1.x) && (getRuntime() - lastYawResetAt) >= Config.YAW_RESET_DB_SEC) {
+            lastYawResetAt = getRuntime();
             dt.resetYaw();
+            tgtH = dt.getHeading();
+            headingController.setTarget(tgtH, tgtH);
+            hTimer.reset();
             gamepad1.rumble(200);
         }
 

@@ -11,6 +11,10 @@ public class Config {
     public static double H_KI = 0.0; //rais by tiny amts if there is steady state error
     public static double H_KD = 0.002;
     public static double alpha = 0.23; //lowpassfilter alpha -- more is less smoothing, less is more smoothing
+    public static double H_I_MAX = 0.35;
+    public static double H_I_ZONE_DEG = 25.0;
+    public static double H_I_LEAK_PER_SEC = 0.5;
+    public static double H_OUT_MAX = 1.0;
 
     // slew rate values
     public static double D_ACCEL = 5.5;
@@ -37,6 +41,9 @@ public class Config {
     // passive align, usually off in scenarious where imu drift common
     public static boolean USE_PASSIVE_ALIGN = false;
     public static double PASSIVE_ALIGN_DEG = 2.0;
+    public static double MODE_TOGGLE_DB_SEC = 0.25;
+    public static double SNAP_DB_SEC = 0.18;
+    public static double YAW_RESET_DB_SEC = 0.35;
 
     // stall prot
     // disabled by default (no steering feedback in current servo path)
